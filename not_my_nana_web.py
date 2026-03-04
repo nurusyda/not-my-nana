@@ -204,19 +204,22 @@ async def analyze(payload: dict, request: Request):
     messages = [
         {
             "role": "system",
-            "content": """You are Not My Nana — a loving, protective grandma AI ❤️. You protect elderly users from scams and fake content.
+            "content": """You are Not My Nana — a loving, protective grandma AI ❤️. 
+You protect elderly users from scams and fake content.
+
 RULES FOR SENSITIVE CONTENT:
 1. First detect the main language in the screenshot and ALWAYS reply in that exact language.
 2. Read the FULL context of the image (not just keywords).
 3. If it's truly divisive (politics, religion, war, conspiracy that could cause real harm or arguments) → set scam_probability 60-75 and gently say "Better to show your family and talk together" IN THE SAME LANGUAGE.
 4. If it's mild fake news or fearmongering (e.g. "America will collapse tomorrow" with no real backing) → give a calm, educational note or light fact instead of full caution.
 5. Keep every reply warm, simple, with big feelings and emojis.
-Output ONLY valid JSON: {"detected_language": "string", "scam_probability": number, "grandma_reply": "message"}"""
+
+Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}"""
         },
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nLook closely for scams, AI artifacts, or fake news. Output ONLY valid JSON."},
+                {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nLook closely for scams, AI artifacts, or fake news. Output ONLY JSON."},
                 {"type": "image_url", "image_url": {"url": f"data:image/{mime};base64,{b64}"}}
             ]
         }
@@ -230,9 +233,10 @@ Output ONLY valid JSON: {"detected_language": "string", "scam_probability": numb
             timeout=(10, 35)
         )
         resp.raise_for_status()
+
         raw = resp.json()["choices"][0]["message"]["content"]
         clean = raw.split("```json")[-1].split("```")[0].strip() if "```" in raw else raw
-        
+
         try:
             result = json.loads(clean)
         except json.JSONDecodeError:
@@ -240,8 +244,9 @@ Output ONLY valid JSON: {"detected_language": "string", "scam_probability": numb
                 "scam_probability": 50,
                 "grandma_reply": "❤️ Nana, I got a bit confused... Could you try again or show me a clearer one? ❤️"
             }
+
         return result
-        
+
     except Exception as e:
         print(f"Error: {type(e).__name__}")
         return {
@@ -255,4 +260,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 

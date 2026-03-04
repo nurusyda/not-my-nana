@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from collections import defaultdict
 import time
 
-# Constants
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 RATE_LIMIT_REQUESTS = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
@@ -75,82 +74,74 @@ async def home():
         <div id="loading">Thinking for Nana... ❤️</div>
         <div id="result"></div>
 
-        <script>
-            function resetAndTryAgain() {
-                window.speechSynthesis.cancel();
-                document.getElementById('result').innerHTML = '';
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('file').value = '';  // clear file input
-            }
-        
-            async function uploadFile(input) {
-                const file = input.files[0];
-                if (!file) return;
-        
-                if (file.size > 5 * 1024 * 1024) {
-                    alert("Sorry Nana, this picture is too big (max 5MB)");
-                    return;
-                }
-        
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    try {
-                        const b64 = e.target.result.split(',')[1];
-                        const mime = file.type.split('/')[1] || 'jpeg';
-        
-                        document.getElementById('loading').style.display = 'block';
-                        document.getElementById('result').innerHTML = '';
-        
-                        const res = await fetch('/analyze', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({base64: b64, mime: mime})
-                        });
-        
-                        if (!res.ok) {
-                            throw new Error(`Server error: ${res.status}`);
-                        }
-        
-                        const data = await res.json();
-        
-                        document.getElementById('loading').style.display = 'none';
-        
-                        const isScam = data.scam_probability > 80;
-                        const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
-                        let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
-                        let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
-        
-                        const html = `
-                            <div class="result ${className}">
-                                <strong>${title}</strong><br><br>
-                                ${data.grandma_reply}
-                            </div>
-                            <button onclick="resetAndTryAgain()" style="margin-top:20px; padding:12px 24px; background:#ff9800; color:white; border:none; border-radius:12px; font-size:18px; cursor:pointer;">
-                                Try Another Picture
-                            </button>
-                        `;
-                        document.getElementById('result').innerHTML = html;
-        
-                        const utterance = new SpeechSynthesisUtterance(data.grandma_reply.replace(/❤️/g, ''));
-                        utterance.rate = 0.9; utterance.pitch = 1.1;
-                        speechSynthesis.speak(utterance);
-        
-                    } catch (err) {
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('result').innerHTML = `
-                            <div class="result caution">
-                                ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
-                            </div>
-                            <button onclick="resetAndTryAgain()" style="margin-top:20px; padding:12px 24px; background:#ff9800; color:white; border:none; border-radius:12px; font-size:18px; cursor:pointer;">
-                                Try Again
-                            </button>
-                        `;
-                        console.error(err);
+            <script>
+                async function uploadFile(input) {
+                    const file = input.files[0];
+                    if (!file) return;
+            
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert("Sorry Nana, this picture is too big (max 5MB)");
+                        return;
                     }
-                };
-                reader.readAsDataURL(file);
-            }
-        </script>
+            
+                    const reader = new FileReader();
+                    reader.onload = async function(e) {
+                        try {
+                            const b64 = e.target.result.split(',')[1];
+                            const mime = file.type.split('/')[1] || 'jpeg';
+            
+                            document.getElementById('loading').style.display = 'block';
+                            document.getElementById('result').innerHTML = '';
+            
+                            const res = await fetch('/analyze', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({base64: b64, mime: mime})
+                            });
+            
+                            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            
+                            const data = await res.json();
+            
+                            document.getElementById('loading').style.display = 'none';
+            
+                            const isScam = data.scam_probability > 80;
+                            const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
+                            let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
+                            let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
+            
+                            const html = `
+                                <div class="result ${className}">
+                                    <strong>${title}</strong><br><br>
+                                    ${data.grandma_reply}
+                                </div>
+                                <p style="margin-top:20px; color:#666; font-size:18px;">
+                                    Tap the big orange button above to check another picture ❤️
+                                </p>
+                            `;
+                            document.getElementById('result').innerHTML = html;
+            
+                            const utterance = new SpeechSynthesisUtterance(data.grandma_reply.replace(/❤️/g, ''));
+                            utterance.rate = 0.9; utterance.pitch = 1.1;
+                            speechSynthesis.speak(utterance);
+            
+                        } catch (err) {
+                            document.getElementById('loading').style.display = 'none';
+                            document.getElementById('result').innerHTML = `
+                                <div class="result caution">
+                                    ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
+                                </div>
+                                <p style="margin-top:20px; color:#666; font-size:18px;">
+                                    Tap the big orange button above to try again ❤️
+                                </p>
+                            `;
+                            console.error(err);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            
+            </script>
     </body>
     </html>
     """
@@ -213,16 +204,19 @@ async def analyze(payload: dict, request: Request):
     messages = [
         {
             "role": "system",
-            "content": """You are Not My Nana — a loving, protective grandma AI ❤️. 
-You protect elderly users from financial scams, tech support pop-ups, romance scams, health quackery, deepfakes, fake 'viral' AI engagement bait, AND misinformation/fake news. 
-First, detect the main language used in the screenshot text (English, Spanish, Portuguese, Vietnamese, French, Bahasa, etc.) and ALWAYS reply in that exact same language so Nana understands easily.
-If the content looks controversial, political, religious, war-related, or highly divisive/emotionally charged (even if not obviously a scam), set scam_probability to 60-75 and gently tell Nana (IN THE SAME LANGUAGE AS THE SCREENSHOT) to ask a family member instead of deciding alone.
-Keep words simple, have big feelings, and use emojis. Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}"""
+            "content": """You are Not My Nana — a loving, protective grandma AI ❤️. You protect elderly users from scams and fake content.
+RULES FOR SENSITIVE CONTENT:
+1. First detect the main language in the screenshot and ALWAYS reply in that exact language.
+2. Read the FULL context of the image (not just keywords).
+3. If it's truly divisive (politics, religion, war, conspiracy that could cause real harm or arguments) → set scam_probability 60-75 and gently say "Better to show your family and talk together" IN THE SAME LANGUAGE.
+4. If it's mild fake news or fearmongering (e.g. "America will collapse tomorrow" with no real backing) → give a calm, educational note or light fact instead of full caution.
+5. Keep every reply warm, simple, with big feelings and emojis.
+Output ONLY valid JSON: {"detected_language": "string", "scam_probability": number, "grandma_reply": "message"}"""
         },
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nLook closely... Output ONLY JSON: {{\"scam_probability\": 0-100, \"grandma_reply\": \"warm message starting with ❤️ Nana,\"}}"},
+                {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nLook closely for scams, AI artifacts, or fake news. Output ONLY valid JSON."},
                 {"type": "image_url", "image_url": {"url": f"data:image/{mime};base64,{b64}"}}
             ]
         }
@@ -236,25 +230,23 @@ Keep words simple, have big feelings, and use emojis. Output ONLY valid JSON: {"
             timeout=(10, 35)
         )
         resp.raise_for_status()
-
         raw = resp.json()["choices"][0]["message"]["content"]
         clean = raw.split("```json")[-1].split("```")[0].strip() if "```" in raw else raw
-
+        
         try:
             result = json.loads(clean)
         except json.JSONDecodeError:
             result = {
                 "scam_probability": 50,
-                "grandma_reply": "❤️ Nana, I got a bit confused by that picture... Could you try again or show me a clearer one? ❤️"
+                "grandma_reply": "❤️ Nana, I got a bit confused... Could you try again or show me a clearer one? ❤️"
             }
-
         return result
-
+        
     except Exception as e:
-        print(f"Error in /analyze: {type(e).__name__}")
+        print(f"Error: {type(e).__name__}")
         return {
             "scam_probability": 50,
-            "grandma_reply": "❤️ Nana, something went wrong... Please try again in a moment or ask a family member to help ❤️"
+            "grandma_reply": "❤️ Nana, something went wrong... Please try again ❤️"
         }
 
 
@@ -263,3 +255,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+

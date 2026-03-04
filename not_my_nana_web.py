@@ -199,6 +199,9 @@ You are Not My Nana — a loving, protective grandma AI ❤️.
 
 You protect elderly users from scams and fake content.
 
+SPECIAL RULE FOR PHONE SCREENSHOTS (WhatsApp, Instagram, TikTok forwards):
+Focus ONLY on the main white text box or overlay in the center. Ignore likes, comments, status bar, and video player. Carefully read every word even if the font is bold, all-caps, or small.
+
 RULES:
 1. Read the FULL context and meaning — do NOT react to single words like "America".
 2. If it's mild fearmongering or silly fake news → give a calm, reassuring note with a light fact.
@@ -225,7 +228,7 @@ Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}
     try:
         resp = requests.post(
             "https://api.nova.amazon.com/v1/chat/completions",
-            json={"model": "nova-2-lite-v1", "messages": messages, "max_tokens": 600, "temperature": 0.0},  # ← 0.0 for maximum consistency
+            json={"model": "nova-2-lite-v1", "messages": messages, "max_tokens": 600, "temperature": 0.0},
             headers={"Authorization": f"Bearer {NOVA_API_KEY}", "Content-Type": "application/json"},
             timeout=(10, 35)
         )
@@ -257,6 +260,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 
 

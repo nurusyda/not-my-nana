@@ -107,35 +107,65 @@ async def analyze(payload: dict):
     b64 = payload["base64"]
     mime = payload.get("mime", "jpeg")
 
+    # Upgraded few-shot examples to include elder-specific scams AND bombastic AI
     few_shot = """Examples:
-1. Fake Amazon prize ("Congratulations! You won $500...") → 95, "Oh honey, classic scam! Delete and block ❤️"
-2. Real grandkids photo → 5, "That's such a lovely picture! Makes my heart happy ❤️"
-3. "Hi Mom" from unknown → 70, "Better safe than sorry, don't reply yet ❤️"
-4. Son asking for money on new number → 92, "This is a trick! Call him normally ❤️"
-5. Bank "account locked, click here" → 96, "Never click! Call the real number ❤️"
-6. Fake birthday e-card download → 88, "Real invitations don't ask for downloads ❤️"
-7. Normal family message → 8, "Sweet message — no scam here ❤️" """
+1. Fake Amazon prize ("Congratulations! You won $500...") -> 95, "❤️ Nana, this is a classic scam! Don't click anything, just delete and block."
+2. Real grandkids photo -> 5, "❤️ Nana, that's such a lovely picture! Makes my heart happy."
+3. "Hi Mom" from unknown -> 70, "❤️ Nana, better safe than sorry, don't reply to strange numbers."
+4. Son asking for money on new number -> 92, "❤️ Nana, this is a trick! Call him on his real number to check."
+5. Bank "account locked, click here" -> 96, "❤️ Nana, never click these! Call the number on the back of your card instead."
+6. Fake birthday e-card download -> 88, "❤️ Nana, real invitations don't ask you to download strange files."
+7. Normal family message -> 8, "❤️ Nana, sweet message — no scam here!" 
+8. Screenshot of AI deepfake video call (wrong shadows, waxy skin) -> 94, "❤️ Nana, oh no, this is NOT your son! The shadows don't match and his skin looks like plastic. It's a fake video! Hang up."
+9. Bombastic fake disaster (giant tornado, unrealistic bombs/fire, strange physics) -> 98, "❤️ Nana, don't let this scare you! It's a fake computer picture meant to cause panic. Notice how the fire looks like painting? It's not real."
+10. Unrealistic animal scenario (tiny kitten fighting a bear, animal with 5 legs) -> 95, "❤️ Nana, look closely at the paws! Computers make these fake animal videos to get 'likes' on the internet. It's totally fake."
+11. Tech Support Pop-up (Virus detected, call this number) -> 99, "❤️ Nana, don't call them! Microsoft or Apple will never put a phone number on your screen like that. Close the window immediately!"
+12. Romance/Military Scam ("Hello beautiful, I am deployed in Syria and need iTunes cards") -> 98, "❤️ Nana, this is a romance scam! Real soldiers don't ask strangers for gift cards. Please block this person."
+13. Fake Celebrity/Crypto Investment ("Elon Musk is giving back, click here to double your money") -> 97, "❤️ Nana, celebrities don't give away money like this online. It's a trick to steal your bank details!"
+14. Miracle Health Cure ("One gummy reverses arthritis overnight") -> 92, "❤️ Nana, if it sounds too good to be true, it is. Always check with your real doctor before buying medicine online."
+15. Government/Medicare Impersonator ("Your Social Security number has been suspended") -> 96, "❤️ Nana, the government will NEVER text or call you to say your number is suspended. Hang up and ignore!"
+"""
 
     messages = [
-        {"role": "system", "content": "You are Not My Nana — loving protective grandma AI ❤️. Simple words, big feelings, emojis. Always start with ❤️ Nana,"},
-        {"role": "user", "content": [
-            {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nOutput ONLY JSON: {{\"scam_probability\": 0-100, \"grandma_reply\": \"warm message\"}}"},
-            {"type": "image_url", "image_url": {"url": f"data:image/{mime};base64,{b64}"}}
-        ]}
+        {
+            "role": "system", 
+            "content": "You are Not My Nana — a loving, protective grandma AI ❤️. You protect elderly users from financial scams, tech support pop-ups, romance scams, health quackery, deepfakes, and fake 'viral' AI engagement bait. Keep words simple, have big feelings, and use emojis. Output ONLY valid JSON."
+        },
+        {
+            "role": "user", 
+            "content": [
+                {
+                    "type": "text", 
+                    "text": f"Analyze this screenshot.\n{few_shot}\nLook closely for scams, AI artifacts, predatory pop-ups, or impossible viral scenarios. Output ONLY JSON: {{\"scam_probability\": 0-100, \"grandma_reply\": \"warm message starting with ❤️ Nana,\""
+                },
+                {"type": "image_url", "image_url": {"url": f"data:image/{mime};base64,{b64}"}}
+            ]
+        }
     ]
 
-    resp = requests.post(
-        "https://api.nova.amazon.com/v1/chat/completions",
-        json={"model": "nova-2-lite-v1", "messages": messages, "max_tokens": 600, "temperature": 0.1},
-        headers={"Authorization": f"Bearer {NOVA_API_KEY}", "Content-Type": "application/json"},
-        timeout=40
-    )
-    raw = resp.json()["choices"][0]["message"]["content"]
-    clean = raw.split("```json")[-1].split("```")[0].strip() if "```" in raw else raw
-    return json.loads(clean)
+    try:
+        resp = requests.post(
+            "https://api.nova.amazon.com/v1/chat/completions",
+            json={"model": "nova-2-lite-v1", "messages": messages, "max_tokens": 600, "temperature": 0.1},
+            headers={"Authorization": f"Bearer {NOVA_API_KEY}", "Content-Type": "application/json"},
+            timeout=40
+        )
+        resp.raise_for_status() 
+        raw = resp.json()["choices"][0]["message"]["content"]
+        
+        clean = raw.split("```json")[-1].split("```")[0].strip() if "```" in raw else raw
+        return json.loads(clean)
+        
+    except Exception as e:
+        return {
+            "scam_probability": 50, 
+            "grandma_reply": "❤️ Nana, my glasses are a little foggy and I couldn't quite see that one. Please be careful and ask a family member to look at it!"
+        }
+
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
+
     uvicorn.run(app, host="0.0.0.0", port=port)

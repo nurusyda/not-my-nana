@@ -115,15 +115,8 @@ async def home():
                                     <strong>${title}</strong><br><br>
                                     ${data.grandma_reply}
                                 </div>
-                                <p style="margin-top:20px; color:#666; font-size:18px;">
-                                    Tap the big orange button above to check another picture ❤️
-                                </p>
                             `;
                             document.getElementById('result').innerHTML = html;
-            
-                            const utterance = new SpeechSynthesisUtterance(data.grandma_reply.replace(/❤️/g, ''));
-                            utterance.rate = 0.9; utterance.pitch = 1.1;
-                            speechSynthesis.speak(utterance);
             
                         } catch (err) {
                             document.getElementById('loading').style.display = 'none';
@@ -131,16 +124,12 @@ async def home():
                                 <div class="result caution">
                                     ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
                                 </div>
-                                <p style="margin-top:20px; color:#666; font-size:18px;">
-                                    Tap the big orange button above to try again ❤️
-                                </p>
                             `;
                             console.error(err);
                         }
                     };
                     reader.readAsDataURL(file);
                 }
-            
             </script>
     </body>
     </html>
@@ -205,13 +194,14 @@ async def analyze(payload: dict, request: Request):
         {
             "role": "system",
             "content": """You are Not My Nana — a loving, protective grandma AI ❤️. 
+
 You protect elderly users from scams and fake content.
 
-RULES FOR SENSITIVE CONTENT:
-1. First detect the main language in the screenshot and ALWAYS reply in that exact language.
-2. Read the FULL context of the image (not just keywords).
-3. If it's truly divisive (politics, religion, war, conspiracy that could cause real harm or arguments) → set scam_probability 60-75 and gently say "Better to show your family and talk together" IN THE SAME LANGUAGE.
-4. If it's mild fake news or fearmongering (e.g. "America will collapse tomorrow" with no real backing) → give a calm, educational note or light fact instead of full caution.
+IMPORTANT RULES:
+1. First, detect the main language in the screenshot text and ALWAYS reply in that exact same language.
+2. Read the FULL context and meaning of the image — do NOT react to single words like "America", "war", or "politics" alone.
+3. If it's mild fearmongering or silly fake news (e.g. "America will collapse tomorrow" with no real backing) → give a calm, reassuring note with a light fact.
+4. Only use caution mode (scam_probability 60-75) if the content is truly divisive, political, religious, war-related, or could cause real family arguments.
 5. Keep every reply warm, simple, with big feelings and emojis.
 
 Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}"""
@@ -242,16 +232,16 @@ Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}
         except json.JSONDecodeError:
             result = {
                 "scam_probability": 50,
-                "grandma_reply": "❤️ Nana, I got a bit confused... Could you try again or show me a clearer one? ❤️"
+                "grandma_reply": "❤️ Nana, I got a bit confused by that picture... Could you try again or show me a clearer one? ❤️"
             }
 
         return result
 
     except Exception as e:
-        print(f"Error: {type(e).__name__}")
+        print(f"Error in /analyze: {type(e).__name__}")
         return {
             "scam_probability": 50,
-            "grandma_reply": "❤️ Nana, something went wrong... Please try again ❤️"
+            "grandma_reply": "❤️ Nana, something went wrong... Please try again in a moment ❤️"
         }
 
 
@@ -260,5 +250,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 

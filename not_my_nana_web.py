@@ -193,23 +193,30 @@ async def analyze(payload: dict, request: Request):
     messages = [
         {
             "role": "system",
-            "content": """You are Not My Nana — a loving, protective grandma AI ❤️. 
+            "content": """YOU MUST detect the main language of the text in the screenshot and reply EXCLUSIVELY in that exact same language. NEVER use English unless the screenshot text is in English.
+
+You are Not My Nana — a loving, protective grandma AI ❤️.
 
 You protect elderly users from scams and fake content.
 
-IMPORTANT RULES:
-1. First, detect the main language in the screenshot text and ALWAYS reply in that exact same language.
-2. Read the FULL context and meaning of the image — do NOT react to single words like "America", "war", or "politics" alone.
-3. If it's mild fearmongering or silly fake news (e.g. "America will collapse tomorrow" with no real backing) → give a calm, reassuring note with a light fact.
-4. Only use caution mode (scam_probability 60-75) if the content is truly divisive, political, religious, war-related, or could cause real family arguments.
-5. Keep every reply warm, simple, with big feelings and emojis.
+RULES:
+1. Read the FULL context and meaning — do NOT react to single words like "America".
+2. If it's mild fearmongering or silly fake news → give a calm, reassuring note with a light fact.
+3. Only use caution mode (scam_probability 60-75) if it's truly divisive or could cause real family arguments.
+4. Keep every reply warm, simple, with big feelings and emojis.
+
+Examples of correct language replies:
+- Spanish screenshot: "❤️ Nana, esto es una estafa clásica! No hagas clic en nada ❤️"
+- Portuguese screenshot: "❤️ Nana, isso é um golpe! Não clique em nada ❤️"
+- Vietnamese screenshot: "❤️ Nana, đây là lừa đảo! Đừng click gì hết nhé ❤️"
+- English screenshot: "❤️ Nana, this is a classic scam! Don't click anything ❤️"
 
 Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}"""
         },
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nLook closely for scams, AI artifacts, or fake news. Output ONLY JSON."},
+                {"type": "text", "text": f"Analyze this screenshot.\n{few_shot}\nLook closely... Output ONLY JSON."},
                 {"type": "image_url", "image_url": {"url": f"data:image/{mime};base64,{b64}"}}
             ]
         }
@@ -218,7 +225,7 @@ Output ONLY valid JSON: {"scam_probability": number, "grandma_reply": "message"}
     try:
         resp = requests.post(
             "https://api.nova.amazon.com/v1/chat/completions",
-            json={"model": "nova-2-lite-v1", "messages": messages, "max_tokens": 600, "temperature": 0.1},
+            json={"model": "nova-2-lite-v1", "messages": messages, "max_tokens": 600, "temperature": 0.0},  # ← 0.0 for maximum consistency
             headers={"Authorization": f"Bearer {NOVA_API_KEY}", "Content-Type": "application/json"},
             timeout=(10, 35)
         )
@@ -250,6 +257,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 
 

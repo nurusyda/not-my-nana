@@ -34,13 +34,20 @@
     </div>
 
     <script>
-        function saveToHistory(data) {
+        function saveToHistory(data, file) {
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            let previewUrl = '';
+            if (file) {
+                previewUrl = URL.createObjectURL(file);
+            }
+            
             history.unshift({
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 reply: data.grandma_reply.substring(0, 80) + (data.grandma_reply.length > 80 ? '...' : ''),
                 type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe')
+                previewUrl: previewUrl || ''
             });
+            
             if (history.length > 3) history.pop(); // Keeps it to max 3 items!
             localStorage.setItem('nanaHistory', JSON.stringify(history));
             renderHistory();

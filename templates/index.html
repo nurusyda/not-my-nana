@@ -71,6 +71,11 @@
             `).join('');
         }
         
+        function retryUpload() {
+            document.getElementById('file').click();           // re-open file picker
+            document.getElementById('result').innerHTML = '';  // clear error message
+        }
+        
         async function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;

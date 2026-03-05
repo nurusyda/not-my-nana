@@ -29,12 +29,13 @@
     <div id="result"></div>
 
     <div id="history">
-        <h3>📜 Nana’s Recent Checks (last 3)</h3>
+        <h3>📜 Recent Checks by Nana (last 3)</h3>
         <div id="history-list"></div>
     </div>
 
     <script>
         function saveToHistory(data, file) {
+            if (!data || !data.grandma_reply) return;
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
     
             // Create preview URL (temporary, dies on reload but nice when fresh)
@@ -111,7 +112,6 @@
                     const isScam = data.scam_probability > 80;
                     const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
                     let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
-                    let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
 
                     const title = data.title || 
                         (isScam ? '🚨 SCAM ALERT!' : 

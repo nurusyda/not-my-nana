@@ -93,6 +93,7 @@ async def analyze(payload: dict, request: Request):
 
         try:
             result = json.loads(clean)
+            print(f"✅ Analyzed | scam={result.get('scam_probability')} | lang=auto | ip={request.client.host}")
         except json.JSONDecodeError:
             result = {
                 "scam_probability": 50,
@@ -114,3 +115,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+

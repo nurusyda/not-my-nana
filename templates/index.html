@@ -61,6 +61,9 @@
             list.innerHTML = history.map(item => `
                 <div class="history-item">
                     <small>${item.time}</small><br>
+                    
+                    ${item.previewUrl ? `<img src="${item.previewUrl}" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="checked image">` : ''}
+                    
                     <span style="color: ${item.type==='scam'?'#f44336':item.type==='caution'?'#2196f3':'#4caf50'}">
                         ${item.reply}
                     </span>

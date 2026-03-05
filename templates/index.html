@@ -36,6 +36,8 @@
     <script>
         function saveToHistory(data, file) {
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+    
+            // Create preview URL (temporary, dies on reload but nice when fresh)
             let previewUrl = '';
             if (file) {
                 previewUrl = URL.createObjectURL(file);

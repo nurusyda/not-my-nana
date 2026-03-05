@@ -8,12 +8,16 @@
     <style>
         body { font-family: system-ui; background: #fff9e6; color: #333; text-align: center; margin: 0; padding: 20px 15px; min-height: 100vh; }
         h1 { font-size: 48px; color: #d32f2f; margin: 15px 0 5px; }
-        button { font-size: 28px; padding: 22px; margin: 15px auto; border: none; border-radius: 25px; width: 90%; max-width: 420px; cursor: pointer; font-weight: bold; background: #ff9800; color: white; display: block; }
+        button { font-size: 28px; padding: 22px; margin: 15px auto; border: none; border-radius: 25px; width: 90%; max-width: 420px; cursor: pointer; font-weight: bold; background: #f4a261; color: white; display: block; } /* softer warm peach */
         .result { margin: 30px auto; padding: 28px; border-radius: 22px; font-size: 27px; line-height: 1.4; max-width: 420px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
         .scam { background: #f44336; color: white; }
         .safe { background: #4caf50; color: white; }
         .caution { background: #2196f3; color: white; }
         #loading { display:none; font-size: 28px; color:#ff9800; margin: 30px 0; }
+        
+        #history { margin-top: 40px; text-align: left; max-width: 420px; margin-left: auto; margin-right: auto; }
+        #history h3 { font-size: 20px; color: #d32f2f; margin-bottom: 10px; }
+        .history-item { background: white; padding: 12px; margin: 8px 0; border-radius: 12px; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -25,7 +29,38 @@
     <div id="loading">Thinking for Nana... ❤️</div>
     <div id="result"></div>
 
+    <div id="history">
+        <h3>📜 Nana’s Recent Checks (last 5)</h3>
+        <div id="history-list"></div>
+    </div>
+
     <script>
+        // Save to history
+        function saveToHistory(data) {
+            let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            history.unshift({
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                reply: data.grandma_reply.substring(0, 80) + (data.grandma_reply.length > 80 ? '...' : ''),
+                type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe')
+            });
+            if (history.length > 5) history.pop();
+            localStorage.setItem('nanaHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            list.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <small>${item.time}</small><br>
+                    <span style="color: ${item.type==='scam'?'#f44336':item.type==='caution'?'#2196f3':'#4caf50'}">
+                        ${item.reply}
+                    </span>
+                </div>
+            `).join('');
+        }
+
         async function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
@@ -61,26 +96,29 @@
                     let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
                     let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
 
-                    const html = `
-                        <div class="result ${className}">
-                            <strong>${title}</strong><br><br>
-                            ${data.grandma_reply}
-                        </div>
-                    `;
+                    const html = `<div class="result ${className}">
+                        <strong>${title}</strong><br><br>
+                        ${data.grandma_reply}
+                    </div>`;
                     document.getElementById('result').innerHTML = html;
+
+                    const utterance = new SpeechSynthesisUtterance(data.grandma_reply.replace(/❤️/g, ''));
+                    utterance.rate = 0.9; utterance.pitch = 1.1;
+                    speechSynthesis.speak(utterance);
+
+                    saveToHistory(data);
 
                 } catch (err) {
                     document.getElementById('loading').style.display = 'none';
-                    document.getElementById('result').innerHTML = `
-                        <div class="result caution">
-                            ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
-                        </div>
-                    `;
+                    document.getElementById('result').innerHTML = 
+                        '<div class="result caution">❤️ Nana, something went wrong... Please try again or ask a family member ❤️</div>';
                     console.error(err);
                 }
             };
             reader.readAsDataURL(file);
         }
+
+        window.onload = renderHistory;
     </script>
 </body>
 </html>

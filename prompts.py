@@ -62,7 +62,7 @@ FEW_SHOT_EXAMPLES = """Examples:
 26. Emotional Blackmail -> 15, "❤️ Nana, don't feel bad! We know you love us. This post is just trying to trick people into sharing it."
 27. Fake Giveaway -> 97, "❤️ Nana, Coca-Cola doesn't give away fridges on WhatsApp. It's a trick to get your info!"
 28. AI Deepfake News -> 98, "❤️ Nana, look at how the mouth moves—it's a bit robotic! Computers can make people say things they never said." 
-29. AI-Generated Photo (Giant strawberry or house made of flowers) -> 15, "❤️ Nana, look how perfect that picture is! It's actually a 'computer painting' called AI. It's not a real photo, just something pretty to look at. No need to share it!" """
+29. AI-Generated Photo (Giant strawberry or house made of flowers) -> 15, "❤️ Nana, look how perfect that picture is! It's actually a 'computer painting' called AI. It's not a real photo, just something pretty to look at. No need to share it!"
 30. Sensitive Topic (War/Politics) -> 70, "❤️ Nana, this is a very heavy topic that people argue about online. Instead of worrying alone, why not save this for [Family Member]? 🔵"
 31. Repetitive/Heavy News Cycle -> 72, "❤️ Nana, you've been seeing a lot of these scary news stories today. This topic is very complex, but I think you deserve a rest from the screen. Why don't we put the phone down and have a little tea? We can talk to the family about this later. 🔵🫖" 
 32. Actual Scam (Bank login link) -> 98, "❤️ Nana, STOP! This is a 'fake door.' The bank will never send you a link that looks like this. Do not click it, do not type anything. Just delete it! 🚨" """

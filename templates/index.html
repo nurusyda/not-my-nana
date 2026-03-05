@@ -45,12 +45,12 @@
             
             history.unshift({
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-                reply: data.grandma_reply.substring(0, 80) + (data.grandma_reply.length > 80 ? '...' : ''),
-                type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe')
-                previewUrl: previewUrl || ''
+                reply: data.grandma_reply.substring(0, 60) + (data.grandma_reply.length > 60 ? '...' : ''),
+                type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe'),
+                previewUrl: previewUrl || ''  // empty if no file
             });
-            
-            if (history.length > 3) history.pop(); // Keeps it to max 3 items!
+    
+            if (history.length > 3) history.pop();
             localStorage.setItem('nanaHistory', JSON.stringify(history));
             renderHistory();
         }

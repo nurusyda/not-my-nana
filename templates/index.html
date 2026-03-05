@@ -113,6 +113,10 @@
                     let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
                     let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
 
+                    const title = data.title || 
+                        (isScam ? '🚨 SCAM ALERT!' : 
+                         (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!'));
+                    
                     const html = `
                         <div class="result ${className}">
                             <strong>${title}</strong><br><br>

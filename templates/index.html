@@ -6,263 +6,118 @@
     <title>Not My Nana ❤️</title>
     <link rel="manifest" href="/manifest.json">
     <style>
-        :root {
-            --warm-bg: #fffdf7;
-            --accent-red: #c62828;
-            --accent-peach: #f4a261;
-            --safe-green: #388e3c;
-            --caution-blue: #1976d2;
-            --scam-red: #d32f2f;
-            --text-dark: #2c2c2c;
-            --text-light: #555;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: var(--warm-bg);
-            color: var(--text-dark);
-            text-align: center;
-            margin: 0;
-            padding: 24px 16px;
-            min-height: 100vh;
-            line-height: 1.5;
-        }
-
-        header {
-            margin-bottom: 32px;
-        }
-
-        h1 {
-            font-size: 3.2rem;
-            color: var(--accent-red);
-            margin: 0 0 8px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        .tagline {
-            font-size: 1.25rem;
-            color: var(--text-light);
-            margin: 0;
-        }
-
-        main {
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        button {
-            font-size: 1.5rem;
-            font-weight: 600;
-            padding: 20px 32px;
-            margin: 24px auto;
-            border: none;
-            border-radius: 999px;
-            background: var(--accent-peach);
-            color: white;
-            cursor: pointer;
-            width: 100%;
-            max-width: 360px;
-            box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
-            transition: all 0.2s ease;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(244, 162, 97, 0.4);
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        #loading {
-            display: none;
-            font-size: 1.5rem;
-            color: var(--accent-peach);
-            margin: 32px 0;
-            font-weight: 500;
-        }
-
-        .result {
-            margin: 24px auto;
-            padding: 28px;
-            border-radius: 20px;
-            font-size: 1.5rem;
-            line-height: 1.45;
-            max-width: 100%;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
-            color: white;
-            text-align: left;
-        }
-
-        .scam    { background: var(--scam-red); }
-        .safe    { background: var(--safe-green); }
-        .caution { background: var(--caution-blue); }
-
-        .result strong {
-            font-size: 1.8rem;
-            display: block;
-            margin-bottom: 16px;
-        }
-
-        /* History */
-        #history {
-            margin-top: 48px;
-            text-align: left;
-        }
-
-        #history h3 {
-            font-size: 1.4rem;
-            color: var(--accent-red);
-            margin: 0 0 16px;
-            font-weight: 600;
-        }
-
-        .history-item {
-            background: white;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            font-size: 1.1rem;
-        }
-
-        .history-item small {
-            color: #888;
-            font-size: 0.9rem;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        footer {
-            margin-top: 64px;
-            font-size: 0.95rem;
-            color: #777;
-        }
-
-        footer a {
-            color: var(--accent-peach);
-            text-decoration: none;
-            font-weight: 500;
-        }
+        body { font-family: system-ui; background: #fff9e6; color: #333; text-align: center; margin: 0; padding: 20px 15px; min-height: 100vh; }
+        h1 { font-size: 48px; color: #d32f2f; margin: 15px 0 5px; }
+        button { font-size: 28px; padding: 22px; margin: 15px auto; border: none; border-radius: 25px; width: 90%; max-width: 420px; cursor: pointer; font-weight: bold; background: #ff9800; color: white; display: block; }
+        .result { margin: 30px auto; padding: 28px; border-radius: 22px; font-size: 27px; line-height: 1.4; max-width: 420px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .scam { background: #f44336; color: white; }
+        .safe { background: #4caf50; color: white; }
+        .caution { background: #2196f3; color: white; }
+        #loading { display:none; font-size: 28px; color:#ff9800; margin: 30px 0; }
+        #history { margin-top: 40px; text-align: left; max-width: 420px; margin-left: auto; margin-right: auto; }
+        #history h3 { font-size: 20px; color: #d32f2f; margin-bottom: 10px; }
+        .history-item { background: white; padding: 12px; margin: 8px 0; border-radius: 12px; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
-
-<header>
     <h1>❤️ Not My Nana</h1>
-    <p class="tagline">Keeping Nana safe from scams — one screenshot at a time</p>
-</header>
 
-<main>
-    <button onclick="document.getElementById('file').click()">
-        📸 Choose Screenshot
-    </button>
-    <input type="file" id="file" accept="image/*" onchange="uploadFile(this)">
+    <button onclick="document.getElementById('file').click()">📸 Choose Screenshot from Gallery</button>
+    <input type="file" id="file" accept="image/*" style="display:none" onchange="uploadFile(this)">
 
     <div id="loading">Thinking for Nana... ❤️</div>
     <div id="result"></div>
 
     <div id="history">
-        <h3>📜 Nana’s Recent Checks</h3>
+        <h3>📜 Nana’s Recent Checks (last 3)</h3>
         <div id="history-list"></div>
     </div>
-</main>
 
-<footer>
-    Made with ❤️ & <strong>Amazon Nova</strong> • 
-    <a href="https://nova.amazon.com" target="_blank">#AmazonNova</a>
-</footer>
-
-<script>
-    function saveToHistory(data) {
-        let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-        history.unshift({
-            time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-            reply: data.grandma_reply.substring(0, 80) + (data.grandma_reply.length > 80 ? '...' : ''),
-            type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe')
-        });
-        if (history.length > 3) history.pop();
-        localStorage.setItem('nanaHistory', JSON.stringify(history));
-        renderHistory();
-    }
-
-    function renderHistory() {
-        const list = document.getElementById('history-list');
-        let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-        list.innerHTML = history.map(item => `
-            <div class="history-item">
-                <small>${item.time}</small><br>
-                <span style="color: ${item.type==='scam'?'#d32f2f':item.type==='caution'?'#1976d2':'#388e3c'}">
-                    ${item.reply}
-                </span>
-            </div>
-        `).join('');
-    }
-
-    async function uploadFile(input) {
-        const file = input.files[0];
-        if (!file) return;
-
-        input.value = ''; // Clears input so same file can be selected again
-
-        if (file.size > 5 * 1024 * 1024) {
-            alert("Sorry Nana, this picture is too big (max 5MB)");
-            return;
+    <script>
+        function saveToHistory(data) {
+            let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            history.unshift({
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                reply: data.grandma_reply.substring(0, 80) + (data.grandma_reply.length > 80 ? '...' : ''),
+                type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe')
+            });
+            if (history.length > 3) history.pop(); // Keeps it to max 3 items!
+            localStorage.setItem('nanaHistory', JSON.stringify(history));
+            renderHistory();
         }
 
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            try {
-                const b64 = e.target.result.split(',')[1];
-                const mime = file.type.split('/')[1] || 'jpeg';
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            list.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <small>${item.time}</small><br>
+                    <span style="color: ${item.type==='scam'?'#f44336':item.type==='caution'?'#2196f3':'#4caf50'}">
+                        ${item.reply}
+                    </span>
+                </div>
+            `).join('');
+        }
+        
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
 
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('result').innerHTML = '';
+            input.value = ''; // FIX: Allows selecting the same file twice
 
-                const res = await fetch('/analyze', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({base64: b64, mime: mime})
-                });
-
-                if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-                const data = await res.json();
-
-                document.getElementById('loading').style.display = 'none';
-
-                const isScam = data.scam_probability > 80;
-                const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
-                let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
-                let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
-
-                const html = `
-                    <div class="result ${className}">
-                        <strong>${title}</strong>
-                        ${data.grandma_reply}
-                    </div>
-                `;
-                document.getElementById('result').innerHTML = html;
-                
-                saveToHistory(data);
-
-            } catch (err) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('result').innerHTML = `
-                    <div class="result caution">
-                        ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
-                    </div>
-                `;
-                console.error(err);
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Sorry Nana, this picture is too big (max 5MB)");
+                return;
             }
-        };
-        reader.readAsDataURL(file);
-    }
 
-    window.onload = renderHistory;
-</script>
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const b64 = e.target.result.split(',')[1];
+                    const mime = file.type.split('/')[1] || 'jpeg';
 
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('result').innerHTML = '';
+
+                    const res = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({base64: b64, mime: mime})
+                    });
+
+                    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+                    const data = await res.json();
+
+                    document.getElementById('loading').style.display = 'none';
+
+                    const isScam = data.scam_probability > 80;
+                    const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
+                    let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
+                    let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
+
+                    const html = `
+                        <div class="result ${className}">
+                            <strong>${title}</strong><br><br>
+                            ${data.grandma_reply}
+                        </div>
+                    `;
+                    document.getElementById('result').innerHTML = html;
+                    saveToHistory(data);
+
+                } catch (err) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').innerHTML = `
+                        <div class="result caution">
+                            ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
+                        </div>
+                    `;
+                    console.error(err);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        window.onload = renderHistory;
+    </script>
 </body>
 </html>

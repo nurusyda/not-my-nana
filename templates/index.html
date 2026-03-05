@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not My Nana ❤️</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        body { font-family: system-ui; background: #fff9e6; color: #333; text-align: center; margin: 0; padding: 20px 15px; min-height: 100vh; }
+        h1 { font-size: 48px; color: #d32f2f; margin: 15px 0 5px; }
+        button { font-size: 28px; padding: 22px; margin: 15px auto; border: none; border-radius: 25px; width: 90%; max-width: 420px; cursor: pointer; font-weight: bold; background: #ff9800; color: white; display: block; }
+        .result { margin: 30px auto; padding: 28px; border-radius: 22px; font-size: 27px; line-height: 1.4; max-width: 420px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .scam { background: #f44336; color: white; }
+        .safe { background: #4caf50; color: white; }
+        .caution { background: #2196f3; color: white; }
+        #loading { display:none; font-size: 28px; color:#ff9800; margin: 30px 0; }
+    </style>
+</head>
+<body>
+    <h1>❤️ Not My Nana</h1>
+
+    <button onclick="document.getElementById('file').click()">📸 Choose Screenshot from Gallery</button>
+    <input type="file" id="file" accept="image/*" style="display:none" onchange="uploadFile(this)">
+
+    <div id="loading">Thinking for Nana... ❤️</div>
+    <div id="result"></div>
+
+    <script>
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Sorry Nana, this picture is too big (max 5MB)");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const b64 = e.target.result.split(',')[1];
+                    const mime = file.type.split('/')[1] || 'jpeg';
+
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('result').innerHTML = '';
+
+                    const res = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({base64: b64, mime: mime})
+                    });
+
+                    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+                    const data = await res.json();
+
+                    document.getElementById('loading').style.display = 'none';
+
+                    const isScam = data.scam_probability > 80;
+                    const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
+                    let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
+                    let title = isScam ? '🚨 SCAM ALERT!' : (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!');
+
+                    const html = `
+                        <div class="result ${className}">
+                            <strong>${title}</strong><br><br>
+                            ${data.grandma_reply}
+                        </div>
+                    `;
+                    document.getElementById('result').innerHTML = html;
+
+                } catch (err) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').innerHTML = `
+                        <div class="result caution">
+                            ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
+                        </div>
+                    `;
+                    console.error(err);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

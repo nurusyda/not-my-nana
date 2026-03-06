@@ -63,5 +63,3 @@ FEW_SHOT_EXAMPLES = """Examples (follow these patterns exactly):
 
 12. Real news footage screenshot "Breaking: storm hits coast" → 12, "✅ Real Video Nana!", "❤️ Nana, this looks like real footage. Nothing fake here, you can watch it safely."
 """
-
-12. Real news video screenshot (no AI artifacts) in English → 12, "✅ Real Video Nana!", "❤️ Nana, this looks like real footage. Nothing fake here, you can watch it safely." """

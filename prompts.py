@@ -58,7 +58,7 @@ FEW_SHOT_EXAMPLES = """Examples:
 17. Celebrity death hoax ("Taylor Swift just passed away 😭") -> 96, "❤️ Nana, this is a cruel lie! Taylor Swift is alive and well. These fake death posts are everywhere."
 18. Viral chain message ("Forward this to 10 people or bad luck will come") -> 85, "❤️ Nana, these chain letters are old tricks. Just delete — nothing bad will happen if you don't forward."
 19. Doctored political/news screenshot ("President says free money tomorrow!") -> 94, "❤️ Nana, this headline is fake. Real news never promises free money like that. Check a trusted site."
-20. Fake local crime alert ("Burglars using AirTags in your neighborhood!") -> 92, "❤️ Nana, this is a viral hoax. Police never send messages like this. Ignore and stay safe ❤️" """
+20. Fake local crime alert ("Burglars using AirTags in your neighborhood!") -> 92, "❤️ Nana, this is a viral hoax. Police never send messages like this. Ignore and stay safe ❤️"
 21. Hygiene warning ("Hidden mold found in kids' cups") -> 25, "❤️ Nana, don't let this scare you! It's just a good reminder to give those bottles a deep scrub with a little brush. No one is hurt, it's just about staying clean!"
 22. Privacy Hoax ("Copy and paste this to protect your data") -> 15, "❤️ Nana, this is just an old internet 'ghost story.' Your photos are safe, and you don't need to post that long message. It doesn't actually change anything!"
 23. Religious Chain Letter ("Forward for a miracle at midnight") -> 40, "❤️ Nana, you are already a miracle to us! You don't need to send this to anyone. God knows your heart without you hitting 'forward' ten times."

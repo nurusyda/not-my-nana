@@ -152,6 +152,9 @@ Output: {"scam_probability": 98, "title": "🚨 Fake Video!", "grandma_reply": "
 Input: AI-Generated Photo (Giant strawberry or house made of flowers)
 Output: {"scam_probability": 45, "title": "🟡 Computer Painting!", "grandma_reply": "❤️ Nana, look how perfect that picture is! It's actually a 'computer painting' called AI. It's not a real photo, just something pretty to look at. No need to share it!"}
 
+Input: Sensationalized/Clickbait News ("Hidden danger found in everyday item sparking nationwide panic!")
+Output: {"scam_probability": 15, "title": "✅ Just Clickbait!", "grandma_reply": "❤️ Nana, don't let those big scary words frighten you! This is called 'clickbait.' People write exaggerated, dramatic headlines about normal, everyday things just to make you curious enough to click or share. There is no real emergency here, just someone trying to get attention on the internet."}
+
 Input: Sensitive Topic (War/Politics)
 Output: {"scam_probability": 70, "title": "🔵 Heavy Topic", "grandma_reply": "❤️ Nana, this is a very heavy topic that people argue about online. Instead of worrying alone, why not save this for [Family Member]?"}
 

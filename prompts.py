@@ -36,7 +36,7 @@ Title examples:
 - English scam: "🚨 SCAM ALERT!"
 - Spanish scam: "🚨 ¡Estafa Detectada!"
 - Vietnamese safe: "✅ An Toàn Rồi Nana!"
-- Caution (any lang): "🔵 Hãy Nói Chuyện Với Gia Đình"
+- Return titles exactly as the screenshot language
 
 Always return JSON with THREE fields: 
 "scam_probability": number 0-100, 

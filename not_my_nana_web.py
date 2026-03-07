@@ -3,6 +3,7 @@ import json
 import requests
 import base64
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
@@ -26,10 +27,34 @@ if not NOVA_API_KEY:
 app = FastAPI(title="Not My Nana ❤️")
 templates = Jinja2Templates(directory="templates")
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Manifest 
 @app.get("/manifest.json")
 async def manifest():
-    return JSONResponse({ ... })  
+    return JSONResponse({
+            "name": "Not My Nana",
+            "short_name": "Not My Nana",
+            "description": "Protecting our loved ones from digital scams and fearmongering.",
+            "start_url": "/",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#c45c5c", 
+            "icons": [
+                {
+                    "src": "/static/logo1.png",  # <-- Changed!
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": "/static/logo1.png",  # <-- Changed!
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }
+            ]
+        })  
 
 # Home page 
 @app.get("/", response_class=HTMLResponse)
@@ -115,4 +140,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 

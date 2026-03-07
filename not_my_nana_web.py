@@ -2,13 +2,15 @@ import os
 import json
 import requests
 import base64
+import time
+from collections import defaultdict
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
-from collections import defaultdict
-import time
+from cachetools import TTLCache
+
 
 from prompts import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES 
 
@@ -16,7 +18,7 @@ from prompts import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 RATE_LIMIT_REQUESTS = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
-request_history = defaultdict(list)
+request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
 
 load_dotenv()
 NOVA_API_KEY = os.getenv("NOVA_API_KEY")
@@ -73,14 +75,13 @@ async def analyze(payload: dict, request: Request):
     # Security checks 
     if not b64:
         raise HTTPException(status_code=400, detail="Missing base64 data")
-    if len(b64) > MAX_IMAGE_SIZE_BYTES * 2:
-        raise HTTPException(status_code=413, detail="Image too large (max ~5MB)")
     try:
         img_bytes = base64.b64decode(b64)
-        if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
-            raise HTTPException(status_code=413, detail="Decoded image too large (max 5MB)")
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid base64 data")
+
+    if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
 
     allowed_mimes = {"jpeg", "jpg", "png", "gif", "webp"}
     if mime.lower() not in allowed_mimes:
@@ -89,12 +90,14 @@ async def analyze(payload: dict, request: Request):
     # Rate limiting
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
-    history = request_history[client_ip]
+    history = request_history.get(client_ip, [])
     history = [t for t in history if now - t < RATE_LIMIT_WINDOW_SECONDS]
+    
+    if len(history) >= RATE_LIMIT_REQUESTS:
+        raise HTTPException(status_code=429, detail="Too many requests — please wait a minute")
+    
     history.append(now)
     request_history[client_ip] = history
-    if len(history) > RATE_LIMIT_REQUESTS:
-        raise HTTPException(status_code=429, detail="Too many requests — please wait a minute")
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -131,9 +134,11 @@ async def analyze(payload: dict, request: Request):
         return result
 
     except Exception as e:
-        print(f"Error in /analyze: {type(e).__name__}")
+        print(f"Error in /analyze: {type(e).__name__} - {str(e)}")
         return {
             "scam_probability": 50,
+            "fallback": True, 
+            "error_detail": str(e),
             "grandma_reply": "❤️ Nana, something went wrong... Please try again in a moment ❤️"
         }
 
@@ -143,6 +148,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 
 

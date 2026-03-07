@@ -134,7 +134,7 @@ async def analyze(payload: dict, request: Request):
         return result
 
     except Exception as e:
-        print(f"Error in /analyze: {type(e).__name__} - {str(e)}")
+        print(f"Error in /analyze: {type(e).__name__}")
         return {
             "scam_probability": 50,
             "fallback": True, 
@@ -148,6 +148,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 
 

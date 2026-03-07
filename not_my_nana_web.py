@@ -77,7 +77,8 @@ async def analyze(payload: dict, request: Request):
         raise HTTPException(status_code=400, detail="Missing base64 data")
     try:
         img_bytes = base64.b64decode(b64)
-    except (ValueError, binascii.Error) as e:
+    
+    except (ValueError, binascii.Error):
         raise HTTPException(status_code=400, detail="Invalid base64 data")
 
     if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
@@ -146,11 +147,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-
-
-
-
-
 
 

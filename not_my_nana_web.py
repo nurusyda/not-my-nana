@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from collections import defaultdict
 import time
 
-from prompts import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES   # import
+from prompts import SYSTEM_PROMPT, FEW_SHOT_EXAMPLES 
 
 # Security constants
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
@@ -32,6 +32,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Manifest 
 @app.get("/manifest.json")
 async def manifest():
+    """Generates the PWA manifest.json file for app installation."""
     return JSONResponse({
             "name": "Not My Nana",
             "short_name": "Not My Nana",
@@ -42,13 +43,13 @@ async def manifest():
             "theme_color": "#c45c5c", 
             "icons": [
                 {
-                    "src": "/static/logo1.png",  # <-- Changed!
+                    "src": "/static/logo-192.png", 
                     "sizes": "192x192",
                     "type": "image/png",
                     "purpose": "any maskable"
                 },
                 {
-                    "src": "/static/logo1.png",  # <-- Changed!
+                    "src": "/static/logo-512.png",
                     "sizes": "512x512",
                     "type": "image/png",
                     "purpose": "any maskable"
@@ -59,11 +60,13 @@ async def manifest():
 # Home page 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    """Renders the main home page template."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 # Analyze endpoint
 @app.post("/analyze")
 async def analyze(payload: dict, request: Request):
+    """Accepts a base64 encoded image and passes it to the AI model to check for scams."""
     b64 = payload.get("base64")
     mime = payload.get("mime", "jpeg")
 
@@ -140,5 +143,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Not My Nana — Clean One-Button Gallery Only!")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 

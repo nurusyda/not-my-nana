@@ -204,14 +204,27 @@
     </div>
  
     <script>
-        // A. Environment Check
+        // A. Setup Environment & "Session Fridge"
         const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+        // This holds the actual images in-memory only (wiped on refresh)
+        const sessionImages = {};
         
         // Prevent XSS
         function escapeHtml(text) {
+            if (!text) return "";
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // THE BRAIN: Defines categories based on score (Aligned with Backend)
+        function getResultType(data) {
+            const score = Number(data.scam_probability) || 0;
+            if (score >= 80) return 'scam';
+            if (score >= 60) return 'caution';
+            if (data.is_ai || (score >= 30 && score <= 59)) return 'ai-picture';
+            return 'safe';
         }
         
         // B. Toggle Function for Dev Tools
@@ -222,7 +235,7 @@
 
         // C. Simulate Function (The "Practice" Button)
         function simulateResult(type) {
-            let scam_probability = 35;
+            let scam_probability = 15;
             let grandma_reply = "✅ This looks safe, Nana! No need to worry. ❤️";
             let title = "✅ Looks safe!";
             let className = 'safe';
@@ -246,7 +259,9 @@
                 className = 'ai-picture';
             }
 
-            // Use escapeHtml for the title and reply
+            const data = { scam_probability, grandma_reply, title };
+            const className = getResultType(data);
+            
             document.getElementById('result').innerHTML = `
                 <div class="result ${className}">
                     <strong>${escapeHtml(title)}</strong><br><br>
@@ -254,31 +269,29 @@
                 </div>
             `;
             
-            saveToHistory({ scam_probability, grandma_reply, simulatedType: className }, null);
+            saveToHistory(data);
         }
 
-        // D. App Logic
-        function saveToHistory(data, file) {
+        // D. History Logic (Session-Only Memory)
+        function saveToHistory(data, b64 = '', mime = '') {
             if (!data || !data.grandma_reply) return;
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-            let persistentPreview = b64 ? `data:image/${mime};base64,${b64}` : '';
             
-            // Robust range check
-            let resultType = 'safe';
-            if (data.scam_probability > 80) resultType = 'scam';
-            else if (data.scam_probability >= 60) resultType = 'caution';
-            else if (data.scam_probability >= 45 && data.scam_probability <= 55) resultType = 'ai-picture';
-            
+            const id = Date.now().toString(); // Use String ID
+
+            // Save image to the temporary Fridge
+            if (b64 && mime) {
+                sessionImages[id] = `data:image/${mime};base64,${b64}`;
+            }
+                      
             history.unshift({
+                id: id,
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 reply: data.grandma_reply,
-                type: resultType,
-                previewUrl: persistentPreview
+                type: getResultType(data)
             });
     
-            if (history.length > 3) {
-                history.pop(); 
-            }
+            if (history.length > 3) history.pop();
             
             localStorage.setItem('nanaHistory', JSON.stringify(history));
             renderHistory();
@@ -287,6 +300,7 @@
         function renderHistory() {
             const list = document.getElementById('history-list');
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            
             list.innerHTML = history.map(item => {
                 const color = item.type === 'scam' ? '#f44336' :
                               item.type === 'caution' ? '#2196f3' :
@@ -295,12 +309,14 @@
                 const emoji = item.type === 'scam' ? '🚨 ' : 
                               item.type === 'ai-picture' ? '🖼️ ' : 
                               item.type === 'caution' ? '🤔 ' : '✅ ';
-    
-                // Added onerror handle for broken images and escapeHtml for text
+
+                // Defensive check for the ID and the Fridge
+                const previewUrl = (item.id && sessionImages[item.id]) ? sessionImages[item.id] : '';
+                
                 return `
                 <div class="history-item">
                     <small>${item.time}</small><br>                 
-                    ${item.previewUrl ? `<img src="${item.previewUrl}" onerror="this.style.display='none'" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="checked image">` : ''}
+                    ${previewUrl ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="Scan preview">` : ''}
                     <span style="color: ${color}">
                         ${emoji} 
                         ${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}
@@ -313,10 +329,13 @@
         function clearHistory() {
             if (confirm("Nana, do you want to clear your recent checks? ❤️")) {
                 localStorage.removeItem('nanaHistory');
+                // Explicitly clear the Fridge
+                Object.keys(sessionImages).forEach(id => delete sessionImages[id]);
                 renderHistory();
             }
         }
-        
+
+        // E. Main Upload Logic
         async function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
@@ -345,23 +364,13 @@
                     const data = await res.json();
                     document.getElementById('loading').style.display = 'none';
 
-                    /* 1. Calculate the category based on the probability score */
-                    const isScam = data.scam_probability > 80;
-                    const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
-                    // AI picture range: adjust when real detection lands (e.g. data.is_ai flag)
-                    const isAI = data.is_ai || (data.scam_probability >= 45 && data.scam_probability <= 55);
-
-                    /* 2. Pick the right CSS class */
-                    let className = isScam ? 'scam' : 
-                                    (isCaution ? 'caution' : 
-                                    (isAI ? 'ai-picture' : 'safe'));
-
-                    /* 3. Set the Title */
-                    const title = data.title || 
-                        (isScam ? '🚨 SCAM ALERT!' : 
-                            (isCaution ? '🤔 Let’s Talk About This' : 
-                                  (isAI ? '🖼️ AI-Generated Picture' : '✅ Looks safe, Nana!')));
-                    
+                    const className = getResultType(data);
+                    const title = data.title || (
+                        className === 'scam' ? '🚨 SCAM ALERT!' : 
+                        className === 'caution' ? '🤔 Let’s Talk' : 
+                        className === 'ai-picture' ? '🖼️ AI-Generated Picture' : '✅ Looks safe, Nana!'
+                    );
+                                       
                     document.getElementById('result').innerHTML = `
                         <div class="result ${className}">
                             <strong>${escapeHtml(title)}</strong><br><br>

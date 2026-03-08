@@ -261,9 +261,9 @@
         function saveToHistory(data, file) {
             if (!data || !data.grandma_reply) return;
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-            let previewUrl = file ? URL.createObjectURL(file) : '';
-
-            // More robust range check
+            let persistentPreview = b64 ? `data:image/${mime};base64,${b64}` : '';
+            
+            // Robust range check
             let resultType = 'safe';
             if (data.scam_probability > 80) resultType = 'scam';
             else if (data.scam_probability >= 60) resultType = 'caution';
@@ -273,13 +273,11 @@
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 reply: data.grandma_reply,
                 type: resultType,
-                
-                previewUrl: previewUrl,
+                previewUrl: persistentPreview
             });
     
             if (history.length > 3) {
-                const removed = history.pop();
-                if (removed.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+                history.pop(); 
             }
             
             localStorage.setItem('nanaHistory', JSON.stringify(history));
@@ -370,7 +368,7 @@
                             ${escapeHtml(data.grandma_reply)}
                         </div>
                     `;
-                    saveToHistory(data, file);
+                    saveToHistory(data, b64, mime);
 
                 } catch (err) {
                     document.getElementById('loading').style.display = 'none';

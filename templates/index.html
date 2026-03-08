@@ -2,27 +2,170 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Not My Nana ❤️</title>
+    
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/static/logo-192.png" type="image/png">
+    
+    <!-- Android/Chrome -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/logo-192.png">
+    
+    <!-- iOS -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <style>
-        body { font-family: system-ui; background: #fff9e6; color: #333; text-align: center; margin: 0; padding: 20px 15px; min-height: 100vh; }
-        h1 { font-size: 48px; color: #d32f2f; margin: 15px 0 5px; }
-        button { font-size: 28px; padding: 22px; margin: 15px auto; border: none; border-radius: 25px; width: 90%; max-width: 420px; cursor: pointer; font-weight: bold; background: #ff9800; color: white; display: block; }
-        .result { margin: 30px auto; padding: 28px; border-radius: 22px; font-size: 27px; line-height: 1.4; max-width: 420px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-        .scam { background: #f44336; color: white; }
-        .safe { background: #4caf50; color: white; }
-        .caution { background: #2196f3; color: white; }
-        #loading { display:none; font-size: 28px; color:#ff9800; margin: 30px 0; }
-        #history { margin-top: 40px; text-align: left; max-width: 420px; margin-left: auto; margin-right: auto; }
-        #history h3 { font-size: 20px; color: #d32f2f; margin-bottom: 10px; }
-        .history-item { background: white; padding: 12px; margin: 8px 0; border-radius: 12px; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        
+        /* 1. Global Setup */
+        body { 
+                font-family: system-ui, -apple-system, sans-serif; 
+                background-color: #fffdf5; 
+                color: #2c3e50; 
+                text-align: center; 
+                margin: 0; 
+                padding: env(safe-area-inset-top) 20px 40px; 
+                min-height: 100vh;
+                -webkit-font-smoothing: antialiased;
+            }
+        
+        /* 2. Header */
+        h1 { 
+                font-size: 42px; 
+                color: #d32f2f; 
+                margin: 20px 0 10px;
+                letter-spacing: -1px;
+            }
+        
+        /* 3. The Main Button */
+        button { 
+                font-size: 28px; 
+                padding: 22px 0; 
+                margin: 20px auto; 
+                border: none; 
+                border-radius: 20px; 
+                width: 100%; 
+                max-width: 400px; 
+                cursor: pointer; 
+                font-weight: 800; 
+                background: #ff9800; 
+                color: white; 
+                display: block; 
+                box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+                
+                user-select: none; 
+                -webkit-tap-highlight-color: transparent; 
+            }
+        /* Tactile feedback */
+        button:active {
+                transform: scale(0.97);
+                box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+            }
+        
+        /* 4. Result Boxes */
+        .result { 
+                margin: 25px auto; 
+                padding: 24px; 
+                border-radius: 24px; 
+                font-size: 27px; 
+                line-height: 1.5; 
+                max-width: 400px; 
+                box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+                animation: slideUp 0.4s ease-out;
+            }
+        @keyframes slideUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        .scam    { background: #f44336; color: white; border: 4px solid #d32f2f; }
+        .safe    { background: #4caf50; color: white; border: 4px solid #388e3c; }
+        .caution { background: #2196f3; color: white; border: 4px solid #1976d2; }
+        .ai-picture {  background: #f8f9fa; color: #424242; border: 4px solid #9e9e9e; }
+        
+        /* 5. Loading State */
+        #loading { 
+                display: none; 
+                font-size: 24px; 
+                color: #ff9800; 
+                margin: 40px 0;
+                font-weight: bold;
+                animation: pulse 1.5s infinite;
+            }
+        @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+        
+        /* 6. History Section */
+        #history { 
+                margin-top: 50px; 
+                text-align: left; 
+                max-width: 400px; 
+                margin-left: auto; 
+                margin-right: auto; 
+                border-top: 2px solid #eee;
+                padding-top: 20px;
+            }
+        
+        #history h3 { 
+                font-size: 18px; 
+                color: #7f8c8d; 
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 15px; 
+            }
+        
+        .history-item { 
+                background: white; 
+                padding: 16px; 
+                margin: 12px 0; 
+                border-radius: 18px; 
+                font-size: 16px; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+                border: 1px solid #f0f0f0;
+            }
+        
+        /* 7. Clear Button */
+        .clear-btn {
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 15px;
+            padding: 10px 20px;
+            margin: 20px auto 30px;
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .clear-btn:active {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #ef9a9a;
+        }
+        
+        /* 8. Production Button */
+        #show-test-btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        #show-test-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+            background: #444;
+        }
     </style>
 </head>
 <body>
     <h1>❤️ Not My Nana</h1>
 
-    <button onclick="document.getElementById('file').click()">📸 Choose Screenshot from Gallery</button>
+    <button ontouchstart="if('vibrate' in navigator) navigator.vibrate(10)" onclick="document.getElementById('file').click()">
+        📸 Choose Screenshot
+    </button>
+    
     <input type="file" id="file" accept="image/*" style="display:none" onchange="uploadFile(this)">
 
     <div id="loading">Thinking for Nana... ❤️</div>
@@ -31,27 +174,95 @@
     <div id="history">
         <h3>📜 Recent Checks by Nana (last 3)</h3>
         <div id="history-list"></div>
+        <button class="clear-btn" onclick="clearHistory()">🗑️ Clear Recent Checks</button>
     </div>
 
+    <button id="show-test-btn" onclick="toggleTestPanel()" 
+        style="position:fixed; bottom:20px; right:20px; z-index:1000; background:#666; color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; box-shadow:0 4px 12px rgba(0,0,0,0.3); display:none;">
+        🛠
+    </button>
+    
+    <div id="test-panel" style="display: none; margin: 40px auto; padding: 20px; background: #f9f9f9; border: 2px dashed #ccc; border-radius: 16px; max-width: 420px; text-align: center;">
+        <p style="color: #888; font-size: 15px; margin: 0 0 15px;">🛠️ Developer Test Mode</p>
+        
+        <button onclick="simulateResult('scam')" style="background:#f44336; color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">Scam</button>
+        <button onclick="simulateResult('caution')" style="background:#2196f3; color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">Caution</button>
+        <button onclick="simulateResult('ai-picture')" style="background:#9e9e9e; color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; border:1px solid #757575;">AI Picture</button>
+        
+        <button onclick="simulateResult('safe')" style="background:#4caf50; color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">Safe</button>
+        
+        <br><br>
+        
+        <button onclick="document.getElementById('test-panel').style.display='none'" style="background:#888; color:white; padding:8px 16px; border:none; border-radius:8px; font-size:14px;">Hide Tools</button>
+    </div>
+ 
     <script>
+        // A. Environment Check
+        const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        
+        // B. Toggle Function for Dev Tools
+        function toggleTestPanel() {
+            const panel = document.getElementById('test-panel');
+            panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'block' : 'none';
+        }
+
+        // C. Simulate Function (The "Practice" Button)
+        function simulateResult(type) {
+            let scam_probability = 35;
+            let grandma_reply = "✅ This looks safe, Nana! No need to worry. ❤️";
+            let title = "✅ Looks safe!";
+            let className = 'safe';
+        
+            if (type === 'scam') {
+                scam_probability = 92;
+                grandma_reply = "🚨 Nana, this looks like a scam! Do NOT click any links. Call me! ❤️";
+                title = "🚨 SCAM ALERT!";
+                className = 'scam';
+            } else if (type === 'caution') {
+                scam_probability = 72;
+                grandma_reply = "🤔 This looks suspicious. Let's look at it together before you do anything. ❤️";
+                title = "🤔 Let’s Talk";
+                className = 'caution';
+            } else if (type === 'ai-picture') {
+                scam_probability = 50;
+                grandma_reply = "🖼️ Nana, this looks like a picture made by AI (a computer program). "
+                              + "It's not a real photo of anyone or anything. "
+                              + "If someone sent it and says it's real, please be extra careful and show it to me ❤️";
+                title = "🖼️ AI-Generated Picture";
+                className = 'ai-picture';
+            }
+        
+            document.getElementById('result').innerHTML = `
+                <div class="result ${className}">
+                    <strong>${title}</strong><br><br>
+                    ${grandma_reply}
+                </div>
+            `;
+            
+            saveToHistory({ scam_probability, grandma_reply, simulatedType: className }, null);
+        }
+
+        // D. App Logic
         function saveToHistory(data, file) {
             if (!data || !data.grandma_reply) return;
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-    
-            // Create preview URL (temporary, dies on reload but nice when fresh)
-            let previewUrl = '';
-            if (file) {
-                previewUrl = URL.createObjectURL(file);
-            }
+            let previewUrl = file ? URL.createObjectURL(file) : '';
             
             history.unshift({
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 reply: data.grandma_reply.substring(0, 60) + (data.grandma_reply.length > 60 ? '...' : ''),
-                type: data.scam_probability > 80 ? 'scam' : (data.scam_probability >= 60 ? 'caution' : 'safe'),
-                previewUrl: previewUrl || ''  // empty if no file
+                type: data.scam_probability > 80 ? 'scam' :
+                      data.scam_probability >= 60 ? 'caution' :
+                      data.scam_probability === 50   ? 'ai-picture' : 
+                      'safe',
+                previewUrl: previewUrl 
             });
     
-            if (history.length > 3) history.pop();
+            if (history.length > 3) {
+                const removed = history.pop();
+                if (removed.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+            }
+            
             localStorage.setItem('nanaHistory', JSON.stringify(history));
             renderHistory();
         }
@@ -61,27 +272,35 @@
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
             list.innerHTML = history.map(item => `
                 <div class="history-item">
-                    <small>${item.time}</small><br>
-                    
-                    ${item.previewUrl ? `<img src="${item.previewUrl}" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="checked image">` : ''}
-                    
-                    <span style="color: ${item.type==='scam'?'#f44336':item.type==='caution'?'#2196f3':'#4caf50'}">
+                    <small>${item.time}</small><br>                 
+                    ${item.previewUrl ? `<img src="${item.previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="checked image">` : ''}
+                    <span style="color: ${
+                        item.type === 'scam' ? '#f44336' :
+                        item.type === 'caution' ? '#2196f3' :
+                        item.type === 'ai-picture' ? '#424242' :
+                        '#4caf50'
+                    }">
+                        ${item.type === 'scam' ? '🚨 ' : 
+                          item.type === 'ai-picture' ? '🖼️ ' : 
+                          item.type === 'caution' ? '🤔 ' : '✅ '}
+                        
                         ${item.reply}
                     </span>
                 </div>
             `).join('');
         }
         
-        function retryUpload() {
-            document.getElementById('file').click();           // re-open file picker
-            document.getElementById('result').innerHTML = '';  // clear error message
+        function clearHistory() {
+            if (confirm("Nana, do you want to clear your recent checks? ❤️")) {
+                localStorage.removeItem('nanaHistory');
+                renderHistory();
+            }
         }
         
         async function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
-
-            input.value = ''; // FIX: Allows selecting the same file twice
+            input.value = ''; 
 
             if (file.size > 5 * 1024 * 1024) {
                 alert("Sorry Nana, this picture is too big (max 5MB)");
@@ -93,7 +312,6 @@
                 try {
                     const b64 = e.target.result.split(',')[1];
                     const mime = file.type.split('/')[1] || 'jpeg';
-
                     document.getElementById('loading').style.display = 'block';
                     document.getElementById('result').innerHTML = '';
 
@@ -104,26 +322,31 @@
                     });
 
                     if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
                     const data = await res.json();
-
                     document.getElementById('loading').style.display = 'none';
 
+                    /* 1. Calculate the category based on the probability score */
                     const isScam = data.scam_probability > 80;
                     const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
-                    let className = isScam ? 'scam' : (isCaution ? 'caution' : 'safe');
+                    const isAI = data.scam_probability === 50;
 
+                    /* 2. Pick the right CSS class */
+                    let className = isScam ? 'scam' : 
+                                    (isCaution ? 'caution' : 
+                                    (isAI ? 'ai-picture' : 'safe'));
+
+                    /* 3. Set the Title */
                     const title = data.title || 
                         (isScam ? '🚨 SCAM ALERT!' : 
-                         (isCaution ? '🤔 Let’s Talk About This' : '✅ Looks safe, Nana!'));
+                            (isCaution ? '🤔 Let’s Talk About This' : 
+                                  (isAI ? '🖼️ AI-Generated Picture' : '✅ Looks safe, Nana!')));
                     
-                    const html = `
+                    document.getElementById('result').innerHTML = `
                         <div class="result ${className}">
                             <strong>${title}</strong><br><br>
                             ${data.grandma_reply}
                         </div>
                     `;
-                    document.getElementById('result').innerHTML = html;
                     saveToHistory(data, file);
 
                 } catch (err) {
@@ -138,7 +361,15 @@
             };
             reader.readAsDataURL(file);
         }
-        window.onload = renderHistory;
+
+        // Startup
+        window.onload = function() {
+            renderHistory();
+            if (isDev && document.getElementById('show-test-btn')) {
+                document.getElementById('show-test-btn').style.display = 'block';
+            }
+        };
+
     </script>
 </body>
 </html>

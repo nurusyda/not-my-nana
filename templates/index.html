@@ -72,7 +72,9 @@
                 border-radius: 24px; 
                 font-size: 27px; 
                 line-height: 1.5; 
-                max-width: 400px; 
+                max-width: 400px;
+                white-space: pre-wrap;
+                word-break: break-word;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.08);
                 animation: slideUp 0.4s ease-out;
             }
@@ -238,25 +240,21 @@
             let scam_probability = 15;
             let grandma_reply = "✅ This looks safe, Nana! No need to worry. ❤️";
             let title = "✅ Looks safe!";
-            let className = 'safe';
         
             if (type === 'scam') {
                 scam_probability = 92;
                 grandma_reply = "🚨 Nana, this looks like a scam! Do NOT click any links. Call me! ❤️";
                 title = "🚨 SCAM ALERT!";
-                className = 'scam';
             } else if (type === 'caution') {
                 scam_probability = 72;
                 grandma_reply = "🤔 This looks suspicious. Let's look at it together before you do anything. ❤️";
                 title = "🤔 Let’s Talk";
-                className = 'caution';
             } else if (type === 'ai-picture') {
                 scam_probability = 50;
                 grandma_reply = "🖼️ Nana, this looks like a picture made by AI (a computer program). "
                               + "It's not a real photo of anyone or anything. "
                               + "If someone sent it and says it's real, please be extra careful and show it to me ❤️";
                 title = "🖼️ AI-Generated Picture";
-                className = 'ai-picture';
             }
 
             const data = { scam_probability, grandma_reply, title };
@@ -272,10 +270,20 @@
             saveToHistory(data);
         }
 
+        function readHistory() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (err) {
+                console.warn('Unable to read nanaHistory', err);
+                return [];
+            }
+        }
+        
         // D. History Logic (Session-Only Memory)
         function saveToHistory(data, b64 = '', mime = '') {
             if (!data || !data.grandma_reply) return;
-            let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            let history = readHistory();
             
             const id = Date.now().toString(); // Use String ID
 
@@ -291,15 +299,22 @@
                 type: getResultType(data)
             });
     
-            if (history.length > 3) history.pop();
+            if (history.length > 3) {
+                const removed = history.pop();
+                if (removed && removed.id) delete sessionImages[removed.id];
+            }
             
-            localStorage.setItem('nanaHistory', JSON.stringify(history));
+           try {
+                localStorage.setItem('nanaHistory', JSON.stringify(history));
+           } catch (err) {
+                console.warn('Unable to persist nanaHistory', err);
+           }
             renderHistory();
         }
 
         function renderHistory() {
             const list = document.getElementById('history-list');
-            let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
+            let history = readHistory();
             
             list.innerHTML = history.map(item => {
                 const color = item.type === 'scam' ? '#f44336' :

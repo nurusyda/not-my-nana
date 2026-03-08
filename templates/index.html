@@ -127,6 +127,13 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.04);
                 border: 1px solid #f0f0f0;
             }
+
+        .history-item span {
+                white-space: pre-wrap; 
+                word-break: break-word; 
+                display: block;         
+                margin-top: 8px;        
+            }
         
         /* 7. Clear Button */
         .clear-btn {
@@ -267,7 +274,7 @@
                 reply: data.grandma_reply,
                 type: resultType,
                 
-                previewUrl: previewUrl 
+                previewUrl: previewUrl,
             });
     
             if (history.length > 3) {
@@ -343,7 +350,8 @@
                     /* 1. Calculate the category based on the probability score */
                     const isScam = data.scam_probability > 80;
                     const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
-                    const isAI = data.scam_probability >= 45 && data.scam_probability <= 55;
+                    // AI picture range: adjust when real detection lands (e.g. data.is_ai flag)
+                    const isAI = data.is_ai || (data.scam_probability >= 45 && data.scam_probability <= 55);
 
                     /* 2. Pick the right CSS class */
                     let className = isScam ? 'scam' : 
@@ -358,7 +366,7 @@
                     
                     document.getElementById('result').innerHTML = `
                         <div class="result ${className}">
-                            <strong>${title}</strong><br><br>
+                            <strong>${escapeHtml(title)}</strong><br><br>
                             ${escapeHtml(data.grandma_reply)}
                         </div>
                     `;

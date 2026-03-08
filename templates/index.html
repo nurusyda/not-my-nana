@@ -200,6 +200,13 @@
         // A. Environment Check
         const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
         
+        // Prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         // B. Toggle Function for Dev Tools
         function toggleTestPanel() {
             const panel = document.getElementById('test-panel');
@@ -231,11 +238,12 @@
                 title = "🖼️ AI-Generated Picture";
                 className = 'ai-picture';
             }
-        
+
+            // Use escapeHtml for the title and reply
             document.getElementById('result').innerHTML = `
                 <div class="result ${className}">
-                    <strong>${title}</strong><br><br>
-                    ${grandma_reply}
+                    <strong>${escapeHtml(title)}</strong><br><br>
+                    ${escapeHtml(grandma_reply)}
                 </div>
             `;
             
@@ -247,14 +255,18 @@
             if (!data || !data.grandma_reply) return;
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
             let previewUrl = file ? URL.createObjectURL(file) : '';
+
+            // More robust range check
+            let resultType = 'safe';
+            if (data.scam_probability > 80) resultType = 'scam';
+            else if (data.scam_probability >= 60) resultType = 'caution';
+            else if (data.scam_probability >= 45 && data.scam_probability <= 55) resultType = 'ai-picture';
             
             history.unshift({
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-                reply: data.grandma_reply.substring(0, 60) + (data.grandma_reply.length > 60 ? '...' : ''),
-                type: data.scam_probability > 80 ? 'scam' :
-                      data.scam_probability >= 60 ? 'caution' :
-                      data.scam_probability === 50   ? 'ai-picture' : 
-                      'safe',
+                reply: data.grandma_reply,
+                type: resultType,
+                
                 previewUrl: previewUrl 
             });
     
@@ -270,24 +282,27 @@
         function renderHistory() {
             const list = document.getElementById('history-list');
             let history = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-            list.innerHTML = history.map(item => `
+            list.innerHTML = history.map(item => {
+                const color = item.type === 'scam' ? '#f44336' :
+                              item.type === 'caution' ? '#2196f3' :
+                              item.type === 'ai-picture' ? '#424242' : '#4caf50';
+                
+                const emoji = item.type === 'scam' ? '🚨 ' : 
+                              item.type === 'ai-picture' ? '🖼️ ' : 
+                              item.type === 'caution' ? '🤔 ' : '✅ ';
+    
+                // Added onerror handle for broken images and escapeHtml for text
+                return `
                 <div class="history-item">
                     <small>${item.time}</small><br>                 
-                    ${item.previewUrl ? `<img src="${item.previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="checked image">` : ''}
-                    <span style="color: ${
-                        item.type === 'scam' ? '#f44336' :
-                        item.type === 'caution' ? '#2196f3' :
-                        item.type === 'ai-picture' ? '#424242' :
-                        '#4caf50'
-                    }">
-                        ${item.type === 'scam' ? '🚨 ' : 
-                          item.type === 'ai-picture' ? '🖼️ ' : 
-                          item.type === 'caution' ? '🤔 ' : '✅ '}
-                        
-                        ${item.reply}
+                    ${item.previewUrl ? `<img src="${item.previewUrl}" onerror="this.style.display='none'" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="checked image">` : ''}
+                    <span style="color: ${color}">
+                        ${emoji} 
+                        ${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}
                     </span>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
         function clearHistory() {
@@ -328,7 +343,7 @@
                     /* 1. Calculate the category based on the probability score */
                     const isScam = data.scam_probability > 80;
                     const isCaution = data.scam_probability >= 60 && data.scam_probability <= 80;
-                    const isAI = data.scam_probability === 50;
+                    const isAI = data.scam_probability >= 45 && data.scam_probability <= 55;
 
                     /* 2. Pick the right CSS class */
                     let className = isScam ? 'scam' : 
@@ -344,7 +359,7 @@
                     document.getElementById('result').innerHTML = `
                         <div class="result ${className}">
                             <strong>${title}</strong><br><br>
-                            ${data.grandma_reply}
+                            ${escapeHtml(data.grandma_reply)}
                         </div>
                     `;
                     saveToHistory(data, file);

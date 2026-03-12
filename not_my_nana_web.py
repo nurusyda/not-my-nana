@@ -154,7 +154,7 @@ async def fetch_with_retries(client: httpx.AsyncClient, url: str, json_data: dic
         try:
             resp = await client.post(url, json=json_data, headers=headers, timeout=timeout)
             resp.raise_for_status()  # Raises for any 4xx/5xx
-            return respp
+            return resp
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             # If it's a 4xx error (like 400 Bad Request or 401 Unauthorized), do NOT retry.            
             if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500:
@@ -260,7 +260,12 @@ async def analyze(payload: dict, request: Request):
                 },
                 headers=headers, timeout=30.0
             )            
-            raw_emp = resp2.json()["choices"][0]["message"]["content"]
+            resp2_data = resp2.json()
+            try:
+                raw_emp = resp2_data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError) as e:
+                print(f"❤️ Unexpected API response structure: {resp2_data}")
+                raise ValueError("Grandchild API returned unexpected response format") from e
             
             # Robust JSON Parsing for Grandchild
             try:
@@ -281,6 +286,7 @@ async def analyze(payload: dict, request: Request):
         return {
             "category": category,
             "is_ai": analysis_data.get("is_ai", False),
+            "ai_score": analysis_data.get("ai_score", 0),
             "scam_probability": analysis_data.get("scam_probability", 0),
             "dominant_language": analysis_data.get("dominant_language", "en"),
             "technical_findings": analysis_data.get("technical_findings", []),

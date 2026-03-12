@@ -4,6 +4,7 @@ FROM python:3.12-slim
 # 2. Install Tesseract OCR and its dependencies
 RUN apt-get update && apt-get install -y \
     --no-install-recommends \
+    --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
     && apt-get clean \
@@ -19,6 +20,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 6. Copy the rest of the project
 # 6. Copy the rest of the project
 COPY . .
 

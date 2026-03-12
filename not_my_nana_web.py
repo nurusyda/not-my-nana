@@ -21,7 +21,10 @@ from prompts import STEP1_ANALYSIS_PROMPT, STEP2_EMPATHY_PROMPT
 
 # --- WINDOWS TESSERACT CONFIG ---
 if os.name == 'nt':
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    pytesseract.pytesseract.tesseract_cmd = os.getenv(
+        'TESSERACT_CMD', 
+        r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    )
 
 load_dotenv()
 NOVA_API_KEY = os.getenv("NOVA_API_KEY")
@@ -47,7 +50,7 @@ class ImageTooLargeError(ValueError):
 def scrub_image_and_extract_text(img_bytes):
     """Physically redacts sensitive text locally."""
     try:
-        # 1. OOpen image without converting to allow dimension checks
+        # 1. Open image without converting to allow dimension checks
         image = Image.open(io.BytesIO(img_bytes))
         
         # 2. Check for "Decompression Bombs" (Pixel check)
@@ -150,11 +153,8 @@ async def fetch_with_retries(client: httpx.AsyncClient, url: str, json_data: dic
     for attempt in range(max_retries):
         try:
             resp = await client.post(url, json=json_data, headers=headers, timeout=timeout)
-            # Manually trigger exception for 5xx errors to force a retry
-            if resp.status_code >= 500:
-                resp.raise_for_status()
-            resp.raise_for_status() # Handle 4xx errors normally
-            return resp
+            resp.raise_for_status()  # Raises for any 4xx/5xx
+            return respp
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             # If it's a 4xx error (like 400 Bad Request or 401 Unauthorized), do NOT retry.            
             if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500:
@@ -226,7 +226,12 @@ async def analyze(payload: dict, request: Request):
                 },
                 headers=headers, timeout=25.0
             )            
-            raw_det = resp1.json()["choices"][0]["message"]["content"]
+            resp1_data = resp1.json()
+            try:
+                raw_det = resp1_data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError) as e:
+                print(f"🕵️ Unexpected API response structure: {resp1_data}")
+                raise ValueError("Detective API returned unexpected response format") from e
             
             # Robust JSON Parsing for Detective
             try:
@@ -277,6 +282,8 @@ async def analyze(payload: dict, request: Request):
             "category": category,
             "is_ai": analysis_data.get("is_ai", False),
             "scam_probability": analysis_data.get("scam_probability", 0),
+            "dominant_language": analysis_data.get("dominant_language", "en"),
+            "technical_findings": analysis_data.get("technical_findings", []),
             "title": empathy_data.get("title", "Check Results"),
             "grandma_reply": empathy_data.get("grandma_reply", "Something went wrong. ❤️")
         }

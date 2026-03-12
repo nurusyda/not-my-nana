@@ -96,8 +96,8 @@ def scrub_image_and_extract_text(img_bytes):
         
     except Exception as e:
         print(f"⚠️ Redaction Error: {e}")
-        # If anything fails, we fall back to a safe default
-        return base64.b64encode(img_bytes).decode("utf-8"), ""
+        # Fail safely - do not expose unredacted image to cloud
+        raise ValueError("PII redaction failed - cannot safely process image") from e
 
 # --- PWA MANIFEST ---
 @app.get("/manifest.json")
@@ -197,7 +197,7 @@ async def analyze(payload: dict, request: Request):
                     {"role": "system", "content": STEP2_EMPATHY_PROMPT},
                     {"role": "user", "content": f"Findings: {json.dumps(analysis_data)}"}
                 ],
-                "temperature": 0.1
+                "temperature": 0.0
             },
             headers=headers, timeout=30
         )

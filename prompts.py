@@ -4,7 +4,7 @@ CRITICAL RULE: Never let the "wholesome", "cute", or "harmless" nature of an ima
 
 ANALYSIS CHECKLIST:
 1. AI FINGERPRINTS(Zoom in on the details): 
-   - Noticable anomalies and distorted in hands and fingers.
+   - Noticeable anomalies and distortions in hands and fingers.
    - Unnatural skin textures (too smooth, "plastic" looking).
    - Inconsistent lighting or shadows.
    - Unnatural habitat.

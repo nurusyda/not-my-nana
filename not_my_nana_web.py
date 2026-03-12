@@ -134,7 +134,11 @@ async def analyze(payload: dict, request: Request):
     request_history[client_ip] = history
 
     try:
-        img_bytes = base64.b64decode(b64)
+        # A. BASE64 DECODE
+        try:
+            img_bytes = base64.b64decode(b64)
+        except (binascii.Error, ValueError):
+            raise HTTPException(status_code=400, detail="Invalid base64 image data")
 
         if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 5MB)")

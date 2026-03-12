@@ -69,24 +69,42 @@ def scrub_image_and_extract_text(img_bytes):
             re.IGNORECASE
         )
 
-        full_text = " ".join(data['text'])
-        scrubbed_words = list(data['text']) 
+        # Redaction Stage
+        # 1. Filter out "Ghost" rows (structural rows like paragraphs/blocks)
+        text_indices = [
+            i for i in range(len(data['text'])) 
+            if data['text'][i].strip() and data.get('conf', [0])[i] != -1
+        ]
+        
+        # 2. Build the full text using ONLY real words
+        filtered_words = [data['text'][i] for i in text_indices]
+        full_text = " ".join(filtered_words)
+        
+        # Create the list we will eventually send to the AI
+        scrubbed_words = list(filtered_words) 
 
+        # 3. Search for PII in the clean, filtered text
         for match in pii_pattern.finditer(full_text):
             start_char = match.start()
             end_char = match.end()
+
             current_char_pos = 0
-            for i in range(len(data['text'])):
+            for idx, i in enumerate(text_indices):
                 word = data['text'][i]
                 word_len = len(word)
+                
+                # Check if this word's position in the full sentence overlaps with the PII match
                 word_start = current_char_pos
                 word_end = current_char_pos + word_len
+                
                 if word_start < end_char and word_end > start_char:
-                    if word.strip(): 
-                        x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-                        draw.rectangle([x, y, x + w, y + h], fill="black")
-                        scrubbed_words[i] = "[REDACTED]"
-                current_char_pos += word_len + 1 
+                    # Draw the rectangle using the original coordinates from Tesseract
+                    x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+                    draw.rectangle([x, y, x + w, y + h], fill="black")
+                    scrubbed_words[idx] = "[REDACTED]"
+                
+                # Move position forward (including the space we added in join)
+                current_char_pos += word_len + 1
 
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG")
@@ -199,7 +217,7 @@ async def analyze(payload: dict, request: Request):
                         {"role": "system", "content": STEP2_EMPATHY_PROMPT},
                         {"role": "user", "content": f"Findings: {json.dumps(analysis_data)}"}
                     ],
-                    "temperature": 0.0
+                    "temperature": 0.1
                 },
                 headers=headers, timeout=30.0
             )

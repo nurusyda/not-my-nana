@@ -2,39 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Not My Nana ❤️</title>
     
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/static/logo-192.png" type="image/png">
-    
-    <link rel="icon" type="image/png" sizes="192x192" href="/static/logo-192.png">
-    
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* =========================================
-           0. Global Variables (:root)
-           ========================================= */
         :root {
             --bg-main: #fffdf5;
             --text-main: #2c3e50;
             --text-muted: #7f8c8d;
-            
             --surface-main: #ffffff;
             --surface-alt: #f8f9fa;
             --surface-border: #f0f0f0;
             --surface-border-heavy: #dee2e6;
-            
             --brand-primary: #ff9800;
             --brand-primary-shadow: rgba(255, 152, 0, 0.3);
-            --brand-primary-active: rgba(255, 152, 0, 0.2);
             --brand-accent: #d32f2f;
-            
-            /* Status Colors */
             --color-scam: #f44336;
             --border-scam: #d32f2f;
             --color-safe: #4caf50;
@@ -44,18 +33,14 @@
             --color-ai: #f8f9fa;
             --border-ai: #9e9e9e;
             --text-ai: #424242;
-
-            /* Sensitive & Viral Colors */
             --color-sensitive: #9c27b0;
             --border-sensitive: #7b1fa2;
             --color-viral: #ffeb3b;
             --border-viral: #fbc02d;
             --text-viral: #3e2723;
-            
             --max-width: 400px;
         }
 
-        /* 🌒 DARK MODE OVERRIDES */
         :root[data-theme="dark"] {
             --bg-main: #121212;
             --text-main: #e0e0e0;
@@ -64,15 +49,16 @@
             --surface-alt: #2c2c2c;
             --surface-border: #333333;
             --surface-border-heavy: #444444;
-
             --color-ai: #2c2c2c;
             --text-ai: #e0e0e0;
-
-            --color-viral: #ffd600;
-            --text-viral: #000000;
+            --color-viral: #ffca28;
+            --text-viral: #1a0f00; 
+            --loading-text: #ffb74d;
+            --result-text-dark: inherit;
+            --error-bg: #c62828;
+            --error-border: #b71c1c;
         }
 
-        /* 1. Global Setup */
         body { 
             font-family: system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-main); 
@@ -85,123 +71,81 @@
         }
         
         h1 { font-size: 42px; color: var(--brand-accent); margin: 20px 0 10px; letter-spacing: -1px; }
-        
-        /* --- Subtitle & Helper Text --- */
-        .subtitle {
-            font-size: 20px;
-            color: var(--text-muted);
-            margin: -5px auto 25px;
-            font-weight: 500;
-        }
+        .subtitle { font-size: 20px; color: var(--text-muted); margin: -5px auto 25px; font-weight: 500; }
+        .helper-text { margin-top: 12px; color: var(--text-muted); font-size: 16px; line-height: 1.4; max-width: var(--max-width); margin-left: auto; margin-right: auto; }
 
-        .helper-text {
-            margin-top: 12px;
-            color: var(--text-muted);
-            font-size: 16px;
-            line-height: 1.4;
-            max-width: var(--max-width);
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* --- Static Color Legend --- */
         .static-legend {
-            max-width: var(--max-width);
-            margin: 20px auto 48px; 
-            text-align: left;
-            padding: 15px;
-            background: var(--surface-main);
-            border-radius: 28px;
-            border: 1px solid var(--surface-border);
+            max-width: var(--max-width); margin: 20px auto 48px; text-align: left; padding: 15px;
+            background: var(--surface-main); border-radius: 28px; border: 1px solid var(--surface-border);
             box-shadow: 0 6px 20px rgba(0,0,0,0.04);
         }
+        :root[data-theme="dark"] .static-legend { background: var(--surface-alt); border-color: var(--surface-border-heavy); }
 
-        .legend-title {
-            font-size: 17px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin: 0 0 15px 0;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
+        .legend-title { font-size: 17px; font-weight: 600; color: var(--text-muted); margin: 0 0 15px 0; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; }
+        .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .legend-item { display: flex; align-items: center; font-size: 16px; font-weight: 500; line-height: 1.4; }
+        .dot { width: 18px; height: 18px; border-radius: 40%; display: inline-block; margin-right: 12px; flex-shrink: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
 
-        .legend-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
+        @media (max-width: 360px) { .legend-grid { grid-template-columns: 1fr; }}
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-            color: var(--text-main);
-            font-weight: 500;
-            line-height: 1.4;
-        }
-
-        .dot {
-            width: 18px;
-            height: 18px;
-            border-radius: 40%;
-            display: inline-block;
-            margin-right: 12px;
-            flex-shrink: 0;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        :root[data-theme="dark"] .static-legend {
-            background: var(--surface-alt);
-            border-color: var(--surface-border-heavy);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        
-        @media (max-width: 360px) {
-            .legend-grid { grid-template-columns: 1fr; }
-        }
-
-        /* Buttons */
         button.main-btn { 
             font-size: 28px; padding: 22px 0; margin: 20px auto 0; border: none; border-radius: 20px; 
             width: 100%; max-width: var(--max-width); cursor: pointer; font-weight: 800; 
             background: var(--brand-primary); color: white; display: block; 
             box-shadow: 0 4px 15px var(--brand-primary-shadow);
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-            user-select: none; -webkit-tap-highlight-color: transparent; 
+            transition: transform 0.1s ease;
         }
-        button.main-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px var(--brand-primary-active); }
-        
-        /* Result Boxes */
+        button.main-btn:active { transform: scale(0.97); }
+
         .result { 
             margin: 25px auto; padding: 30px 24px; border-radius: 28px; max-width: var(--max-width);
             box-shadow: 0 12px 30px rgba(0,0,0,0.01); animation: slideUp 0.4s ease-out;
             display: flex; flex-direction: column; align-items: center; text-align: center;
         }
+        .result-title { display: block; font-size: 32px; font-weight: 900; margin-bottom: 15px; line-height: 1.2; color: inherit; }
+        .result-text { display: block; font-size: 27px; line-height: 1.4; color: var(--result-text-dark, inherit); }
 
-        .result-title { display: block; font-size: 32px; font-weight: 900; margin-bottom: 15px; line-height: 1.2; }
-        .result-text { display: block; font-size: 27px; line-height: 1.4; white-space: normal; word-wrap: break-word; }
-
-        .scam       { background: var(--color-scam); color: white; border: 4px solid var(--border-scam); }
-        .safe       { background: var(--color-safe); color: white; border: 4px solid var(--border-safe); }
-        .caution    { background: var(--color-caution); color: white; border: 4px solid var(--border-caution); }
+        .scam { background: var(--color-scam); color: white; border: 4px solid var(--border-scam); }
+        .safe { background: var(--color-safe); color: white; border: 4px solid var(--border-safe); }
+        .caution { background: var(--color-caution); color: white; border: 4px solid var(--border-caution); }
         .ai-picture { background: var(--color-ai); color: var(--text-ai); border: 4px solid var(--border-ai); }
-        .sensitive  { background: var(--color-sensitive); color: white; border: 4px solid var(--border-sensitive); }
-        .viral      { background: var(--color-viral); color: var(--text-viral); border: 4px solid var(--border-viral); }
-        
-        #loading { display: none; font-size: 24px; color: var(--brand-primary); margin: 40px 0; font-weight: bold; animation: pulse 1.5s infinite; }
-        
+        .sensitive { background: var(--color-sensitive); color: white; border: 4px solid var(--border-sensitive); }
+        .viral { background: var(--color-viral); color: var(--text-viral); border: 4px solid var(--border-viral); }
+        .result.error { 
+            background: var(--error-bg, #ef5350); 
+            color: white; 
+            border: 4px solid var(--error-border, #d32f2f); 
+            font-size: 24px; 
+            line-height: 1.5; 
+            padding: 40px 20px; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.01); 
+        }
+
+        #loading { display: none; font-size: 24px; color: var(--loading-text, #ff9800); margin: 40px 0; font-weight: bold; text-align: center; }
+        .pulse { animation: pulse 1.5s infinite; }
+
         #history { margin-top: 50px; text-align: left; max-width: var(--max-width); margin-left: auto; margin-right: auto; border-top: 2px solid #eee; padding-top: 20px; }
-        #history h3 { font-size: 18px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+        #history h3 { font-size: 18px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px; text-align: center; }
         
         .history-item { 
             background: var(--surface-main); padding: 16px; margin: 12px 0; border-radius: 18px; 
-            font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--surface-border); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--surface-border); 
         }
-
-        .history-item span { white-space: normal; word-break: break-word; display: block; margin-top: 8px; }
+        .history-item span { display: block; margin-top: 8px; white-space: normal; word-break: break-word; }
+        .history-item small { font-size: 13px; color: var(--text-muted); opacity: 0.85; }
+        :root[data-theme="dark"] .history-item small { color: #aaa; }
         
-        .clear-btn { background: var(--surface-alt); color: var(--text-muted); font-size: 15px; padding: 10px 20px; margin: 20px auto 30px; border-radius: 12px; border: 1px solid var(--surface-border-heavy); cursor: pointer; transition: all 0.12s ease; }
+        .history-item img { display: block; max-width: 100%; border-radius: 8px; margin: 8px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        :root[data-theme="dark"] .history-item img { box-shadow: 0 2px 8px rgba(0,0,0,0.4); filter: brightness(1.05); }
+
+        .history-placeholder {
+            height: 100px; background: var(--surface-alt); border-radius: 8px; margin: 8px 0;
+            display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+            font-size: 14px; border: 1px dashed var(--surface-border-heavy);
+        }
+        :root[data-theme="dark"] .history-placeholder { background: #2c2c2c; border-color: #555; color: #aaa; }
+
+        .clear-btn { background: var(--surface-alt); color: var(--text-muted); font-size: 15px; padding: 10px 20px; border-radius: 12px; border: 1px solid var(--surface-border-heavy); cursor: pointer; transition: all 0.12s ease; }
         .clear-btn:active { background: #ffebee; color: var(--brand-accent); border-color: #ef9a9a; }
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -210,7 +154,7 @@
 </head>
 <body>
     <button id="theme-toggle" onclick="toggleTheme()" aria-label="Switch to dark theme"
-        style="position: absolute; top: 15px; right: 15px; width: 45px; height: 45px; font-size: 24px; padding: 0; background: none; box-shadow: none; margin: 0; display: inline-block; ">
+        style="position: absolute; top: 15px; right: 15px; width: 45px; height: 45px; font-size: 24px; background: none; border:none; cursor:pointer;">
         🌙
     </button>
     
@@ -220,27 +164,34 @@
     <button class="main-btn" ontouchstart="if('vibrate' in navigator) navigator.vibrate(10)" onclick="document.getElementById('file').click()">
         📸 Choose Screenshot
     </button>
-    
     <p class="helper-text">Upload any screenshot. We'll check for scams & fake photos and give you a simple color-coded safety score.</p>
     
     <input type="file" id="file" accept="image/*" style="display:none" onchange="uploadFile(this)">
 
-    <div id="loading">Thinking for Nana... ❤️</div>
-    <div id="result"></div>
+    <div id="loading" role="status" aria-live="polite">
+        <div class="pulse">❤️ Thinking really hard for Nana...</div>
+        <div style="font-size:18px; margin-top:12px; color:var(--text-muted);">This usually takes 10–25 seconds.<br>Please wait ❤️</div>
+    </div>
+
+    <div id="result" role="alert" aria-live="assertive"></div>
 
     <div class="static-legend">
         <h4 class="legend-title">Color Guide</h4>
         <div class="legend-grid">
-        <div class="legend-item"><span class="dot" style="background: var(--color-safe);"></span> ✅ Safe / Real</div>
-        <div class="legend-item"><span class="dot" style="background: var(--color-scam);"></span> ❌ Scam! Danger</div>
-        <div class="legend-item"><span class="dot" style="background: var(--color-caution);"></span> ⚠️ Be careful</div>
-        <div class="legend-item"><span class="dot" style="background: var(--border-ai);"></span> 🤖 Fake photo (AI)</div>
-        <div class="legend-item"><span class="dot" style="background: var(--color-sensitive);"></span> 👨‍👩‍👧‍👦 Talk to family</div>
-        <div class="legend-item"><span class="dot" style="background: var(--color-viral);"></span> 📰 Clickbait News</div></div>
+            <div class="legend-item"><span class="dot" style="background: var(--color-safe);"></span> ✅ Safe / Real</div>
+            <div class="legend-item"><span class="dot" style="background: var(--color-scam);"></span> ❌ Scam! Danger</div>
+            <div class="legend-item"><span class="dot" style="background: var(--color-caution);"></span> ⚠️ Be careful</div>
+            <div class="legend-item"><span class="dot" style="background: var(--border-ai);"></span> 🤖 Fake photo (AI)</div>
+            <div class="legend-item"><span class="dot" style="background: var(--color-sensitive);"></span> 👨‍👩‍👧‍👦 Talk to family</div>
+            <div class="legend-item"><span class="dot" style="background: var(--color-viral);"></span> 📰 Clickbait News</div>
+        </div>
     </div>
 
     <div id="history">
         <h3>📜 Recent Checks by Nana (last 3)</h3>
+        <p style="font-size:14px; color:var(--text-muted); margin:8px 0 16px; text-align:center;">
+            (Photos disappear when you refresh or close the page — that's normal ❤️)
+        </p>
         <div id="history-list"></div>
         <button class="clear-btn" onclick="clearHistory()">🗑️ Clear Recent Checks</button>
     </div>
@@ -252,19 +203,18 @@
     
     <div id="test-panel" style="display: none; margin: 40px auto; padding: 20px; background: var(--surface-alt); border: 2px dashed var(--surface-border-heavy); border-radius: 16px; max-width: 420px; text-align: center;">
         <p style="color: #888; font-size: 15px; margin: 0 0 15px;">🛠️ Developer Test Mode</p>
-        <button onclick="simulateResult('scam')" style="background:var(--color-scam); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Scam</button>
-        <button onclick="simulateResult('ai_image')" style="background:var(--border-ai); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">AI Picture</button>
-        <button onclick="simulateResult('sensitive')" style="background:var(--color-sensitive); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Sensitive</button>
-        <button onclick="simulateResult('viral')" style="background:var(--color-viral); color:var(--text-viral); margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Viral</button>
-        <button onclick="simulateResult('safe')" style="background:var(--color-safe); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Safe</button>
+        <button onclick="simulateResult('scam')" style="background:var(--color-scam); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto;">Scam</button>
+        <button onclick="simulateResult('ai_image')" style="background:var(--border-ai); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto;">AI Picture</button>
+        <button onclick="simulateResult('sensitive')" style="background:var(--color-sensitive); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto;">Sensitive</button>
+        <button onclick="simulateResult('viral')" style="background:var(--color-viral); color:var(--text-viral); margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto;">Viral</button>
+        <button onclick="simulateResult('safe')" style="background:var(--color-safe); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto;">Safe</button>
         <br><br>
         <button onclick="document.getElementById('test-panel').style.display='none'" style="background:#888; color:white; padding:8px 16px; border:none; border-radius:8px; font-size:14px; width: auto;">Hide Tools</button>
     </div>
 
     <script>
         const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('ngrok');
-        const sessionImages = {};
-        
+
         function escapeHtml(text) {
             if (!text) return "";
             const div = document.createElement('div');
@@ -327,29 +277,27 @@
             catch { return []; }
         }
         
-        function saveToHistory(data, b64 = '', mime = '') {
+        function saveToHistory(data, thumbB64 = '') {
             if (!data || !data.grandma_reply) return;
             let history = readHistory();
-            const id = Date.now().toString();
-
-            if (b64 && mime) sessionImages[id] = `data:image/${mime};base64,${b64}`;
-                    
+            
             history.unshift({
-                id: id,
+                id: Date.now().toString(),
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
                 reply: data.grandma_reply,
-                type: getResultType(data)
+                type: getResultType(data),
+                image: thumbB64,
+                confidence: Number(data.scam_probability) || 0
             });
-    
-            if (history.length > 3) {
-                const removed = history.pop();
-                if (removed && removed.id) delete sessionImages[removed.id];
-            }
+
+            if (history.length > 3) history.pop();
             
             try {
                 localStorage.setItem('nanaHistory', JSON.stringify(history));
             } catch (e) {
-                console.warn('Could not save history:', e);
+                console.warn('Storage full, saving without image');
+                if (history.length > 0) history[0].image = '';
+                localStorage.setItem('nanaHistory', JSON.stringify(history));
             }
             renderHistory();
         }
@@ -366,13 +314,20 @@
                 else if (item.type === 'sensitive') colorVar = 'var(--color-sensitive)';
                 else if (item.type === 'viral') colorVar = 'var(--color-viral)';
 
-                const previewUrl = (item.id && sessionImages[item.id]) ? sessionImages[item.id] : '';
-                
+                const previewUrl = item.image || '';
+
+                const previewAlt = item.reply 
+                    ? `Preview of recent check: ${escapeHtml(item.reply.substring(0, 40))}${item.reply.length > 40 ? '...' : ''}`
+                    : "Recent scan preview (no description available)";
+
                 return `
                 <div class="history-item">
                     <small>${item.time}</small><br>
-                    ${previewUrl ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="Scan preview">` : ''}
-                    <span style="color: ${colorVar}"> ${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}</span>
+                    ${previewUrl 
+                        ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="${previewAlt}">` 
+                        : '<div class="history-placeholder">No preview saved</div>'
+                    }
+                    <span style="color: ${colorVar}">${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}</span>
                 </div>
                 `;
             }).join('');
@@ -381,7 +336,6 @@
         function clearHistory() {
             if (confirm("Nana, do you want to clear your recent checks? ❤️")) {
                 localStorage.removeItem('nanaHistory');
-                Object.keys(sessionImages).forEach(id => delete sessionImages[id]);
                 renderHistory();
             }
         }
@@ -391,20 +345,54 @@
             if (!file) return;
             input.value = ''; 
 
-            if (file.size > 5 * 1024 * 1024) { alert("Sorry Nana, this picture is too big (max 5MB)"); return; }
+            if (file.size > 5 * 1024 * 1024) { 
+                alert("Sorry Nana, this picture is too big (max 5MB)"); 
+                return; 
+            }
 
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const b64 = e.target.result.split(',')[1];
+                    const fullB64 = e.target.result.split(',')[1];
                     const mime = file.type.split('/')[1] || 'jpeg';
+
+                    // Create small 200px thumbnail for persistent history preview (much smaller than full image)
+                    let thumbB64 = '';
+                    try {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        await img.decode();
+
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        const targetWidth = 200;
+                        let targetHeight = (img.height / img.width) * targetWidth;
+
+                        const maxHeight = 300; // safety cap — prevents super tall/thin previews
+                        if (targetHeight > maxHeight) {
+                            targetHeight = maxHeight;
+                            canvas.width = (img.width / img.height) * maxHeight;
+                            canvas.height = maxHeight;
+                        } else {
+                            canvas.width = targetWidth;
+                            canvas.height = targetHeight;
+                        }
+
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        thumbB64 = canvas.toDataURL('image/jpeg', 0.6);
+                    } catch (thumbErr) {
+                        console.warn("Thumbnail creation failed:", thumbErr);
+                    }
+
                     document.getElementById('loading').style.display = 'block';
                     document.getElementById('result').innerHTML = '';
 
                     const res = await fetch('/analyze', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({base64: b64, mime: mime})
+                        body: JSON.stringify({base64: fullB64, mime: mime})
                     });
 
                     if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -418,12 +406,12 @@
                             <span class="result-text">${escapeHtml(data.grandma_reply)}</span>
                         </div>
                     `;
-                    saveToHistory(data, b64, mime);
+                    saveToHistory(data, thumbB64);
 
                 } catch (err) {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('result').innerHTML = `
-                        <div class="result caution">
+                        <div class="result error">
                             ❤️ Nana, something went wrong... Please try again or use a smaller picture ❤️
                         </div>
                     `;
@@ -436,38 +424,25 @@
         function initTheme() {
             const savedTheme = localStorage.getItem('nanaTheme');
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const toggleBtn = document.getElementById('theme-toggle');
-            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                toggleBtn.innerText = '☀️';
-                toggleBtn.setAttribute('aria-label', 'Switch to light theme');
-            } else {
-                toggleBtn.setAttribute('aria-label', 'Switch to dark theme');
-            }
+            const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-toggle').innerText = isDark ? '☀️' : '🌙';
+            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
         }
 
         function toggleTheme() {
             const root = document.documentElement;
-            const toggleBtn = document.getElementById('theme-toggle');
-            if (root.getAttribute('data-theme') === 'dark') {
-                root.removeAttribute('data-theme');
-                localStorage.setItem('nanaTheme', 'light');
-                toggleBtn.innerText = '🌙';
-                toggleBtn.setAttribute('aria-label', 'Switch to dark theme');
-            } else {
-                root.setAttribute('data-theme', 'dark');
-                localStorage.setItem('nanaTheme', 'dark');
-                toggleBtn.innerText = '☀️';
-                toggleBtn.setAttribute('aria-label', 'Switch to light theme');
-            }
+            const isDark = root.getAttribute('data-theme') === 'dark';
+            root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            localStorage.setItem('nanaTheme', isDark ? 'light' : 'dark');
+            document.getElementById('theme-toggle').innerText = isDark ? '🌙' : '☀️';
+            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
         }
 
         window.onload = function() {
             initTheme();
             renderHistory();
-            if (isDev && document.getElementById('show-test-btn')) {
-                document.getElementById('show-test-btn').style.display = 'block';
-            }
+            if (isDev) document.getElementById('show-test-btn').style.display = 'block';
         };
     </script>
 </body>

@@ -40,7 +40,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # --- THE SECURITY & RATE LIMITING CONSTANTS ---
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
-MAX_IMAGE_PIXELS = 20_000_000  # Shield against "Decompression Bombs"
+MAX_IMAGE_PIXELS = 20_000_000
+MAX_OCR_CONTEXT_CHARS = 4000
 RATE_LIMIT_REQUESTS = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
 request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
@@ -49,79 +50,61 @@ class ImageTooLargeError(ValueError):
     pass
 # --- THE PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
-    """Physically redacts sensitive text locally."""
+    """Physically redacts sensitive text locally — word by word."""
     try:
-        # 1. Open image without converting to allow dimension checks
+        # 1. Open & basic safety
         image = Image.open(io.BytesIO(img_bytes))
-        
-        # 2. Check for "Decompression Bombs" (Pixel check)
+        image.verify()  # quick corruption check
+        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")  # reopen after verify
+
         if image.width * image.height > MAX_IMAGE_PIXELS:
             raise ImageTooLargeError("Image dimensions too large")
-            
-        # 3. Now convert to RGB
-        image = image.convert("RGB")
+
         draw = ImageDraw.Draw(image)
-        
-        # OCR Stage
+
+        # 2. OCR
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-        
-        # PII Detection Patterns
+
+        # 3. Only consider "real" words with decent confidence
+        confidences = data.get('conf', [100] * len(data['text'])) # Fallback to 100 if missing
+        text_indices = [
+            i for i in range(len(data['text']))
+            if data['text'][i].strip() and confidences[i] >= 60
+        ]
+
+        scrubbed_words = [data['text'][i] for i in text_indices]
+
+        # 4. Best regex we can reasonably use here (catches most real-world phones + emails)
         pii_pattern = re.compile(
             r'('
-            r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|'            
-            r'(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{4,}|' 
-            r'\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b|'            
-            r'\b\d{13,19}\b'                                             
+            r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|'               # emails
+            r'(\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})|'  # flexible phones
+            r'\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b|'                 # credit-card like
+            r'\b\d{13,19}\b'                                                  # long numbers
             r')',
-            re.IGNORECASE
+            re.IGNORECASE | re.UNICODE
         )
 
-        # Redaction Stage
-        # 1. Filter out "Ghost" rows (structural rows like paragraphs/blocks)
-        text_indices = [
-            i for i in range(len(data['text'])) 
-            if data['text'][i].strip() and data.get('conf', [0]*len(data['text']))[i] != -1
-        ]
-        
-        # 2. Build the full text using ONLY real words
-        filtered_words = [data['text'][i] for i in text_indices]
-        full_text = " ".join(filtered_words)
-        
-        # Create the list we will eventually send to the AI
-        scrubbed_words = list(filtered_words) 
+        # 5. Redact word-by-word
+        for idx, word_idx in enumerate(text_indices):
+            word = data['text'][word_idx].strip()
+            if pii_pattern.search(word):
+                x = data['left'][word_idx]
+                y = data['top'][word_idx]
+                w = data['width'][word_idx]
+                h = data['height'][word_idx]
+                # Slightly larger box = less chance of leaking edges
+                draw.rectangle([x-5, y-5, x + w + 5, y + h + 5], fill="black")
+                scrubbed_words[idx] = "[REDACTED]"
 
-        # 3. Search for PII in the clean, filtered text
-        for match in pii_pattern.finditer(full_text):
-            start_char = match.start()
-            end_char = match.end()
-
-            current_char_pos = 0
-            for idx, i in enumerate(text_indices):
-                word = data['text'][i]
-                word_len = len(word)
-                
-                # Check if this word's position in the full sentence overlaps with the PII match
-                word_start = current_char_pos
-                word_end = current_char_pos + word_len
-                
-                if word_start < end_char and word_end > start_char:
-                    # Draw the rectangle using the original coordinates from Tesseract
-                    x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-                    draw.rectangle([x, y, x + w, y + h], fill="black")
-                    scrubbed_words[idx] = "[REDACTED]"
-                
-                # Move position forward (including the space we added in join)
-                current_char_pos += word_len + 1
-
+        # 6. Save redacted image
         buffered = io.BytesIO()
-        image.save(buffered, format="JPEG")
+        image.save(buffered, format="JPEG", quality=85)  # smaller size, good enough
         redacted_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        
+
         return redacted_b64, " ".join(scrubbed_words)
-        
-    except (UnidentifiedImageError, OSError):
-        raise
-    except ImageTooLargeError:
+
+    except (UnidentifiedImageError, OSError, ImageTooLargeError):
         raise
     except Exception as e:
         print(f"⚠️ Redaction Error: {e}")
@@ -204,7 +187,9 @@ async def analyze(payload: dict, request: Request):
         except ImageTooLargeError as e:
             raise HTTPException(status_code=413, detail=str(e)) from e
 
-        ocr_context = extracted_text if extracted_text.strip() else "[No text detected]"
+        ocr_context = extracted_text.strip() or "[No text detected]"
+        if len(ocr_context) > MAX_OCR_CONTEXT_CHARS:
+            ocr_context = ocr_context[:MAX_OCR_CONTEXT_CHARS] + " …[truncated]"
 
         # 3. Use Async HTTP for AI calls
         async with httpx.AsyncClient() as client:
@@ -235,15 +220,30 @@ async def analyze(payload: dict, request: Request):
                 raise ValueError("Detective API returned unexpected response format") from e
             
             # Robust JSON Parsing for Detective
-            try:
-                start_det = raw_det.find('{')
-                end_det = raw_det.rfind('}') + 1
-                if start_det == -1 or end_det == 0:
-                    raise ValueError("No JSON object found in response")
-                analysis_data = json.loads(raw_det[start_det:end_det])
-            except Exception:
-                print("🕵️ Detective failed to give JSON")
-                raise ValueError("Detective response was not valid JSON") from None
+            try:                
+                start_idx = raw_det.find('{')
+                end_idx   = raw_det.rfind('}') + 1
+
+                if start_idx == -1 or end_idx <= start_idx:                    
+                    print(f"JSON not found in DEtective: {raw_det[:200]!r}")
+                    raise ValueError("Detective missing JSON")
+
+                json_str = raw_det[start_idx:end_idx]
+                analysis_data = json.loads(json_str)
+
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"JSON parse failed: {e} — raw: {raw_det[:300]!r}")
+                # Optional: return fallback result instead of crashing whole request
+                analysis_data = {
+                    "category": "caution",
+                    "is_ai": False,
+                    "ai_score": 0,
+                    "scam_probability": 60,
+                    "dominant_language": "en",
+                    "technical_findings": ["Could not understand AI answer"],
+                    "title": "🤔 Hmm...",
+                    "grandma_reply": "❤️ Nana, I got confused by the answer. Try again in a minute? ❤️"
+                }
                 
             print("🕵️ Detective analysis parsed")
 
@@ -269,16 +269,30 @@ async def analyze(payload: dict, request: Request):
                 raise ValueError("Grandchild API returned unexpected response format") from e
             
             # Robust JSON Parsing for Grandchild
-            try:
-                start_emp = raw_emp.find('{')
-                end_emp = raw_emp.rfind('}') + 1
-                if start_emp == -1 or end_emp == 0:
-                    raise ValueError("No JSON object found in response")
-                empathy_data = json.loads(raw_emp[start_emp:end_emp])
-            except Exception:
-                print("❤️ Grandchild failed to give JSON")
-                raise ValueError("Grandchild response was not valid JSON") from None
-                
+            try:                
+                start_idx = raw_emp.find('{')
+                end_idx   = raw_emp.rfind('}') + 1
+
+                if start_idx == -1 or end_idx <= start_idx:                    
+                    print(f"JSON not found in Grandchild: {raw_emp[:200]!r}")
+                    raise ValueError("Grandchild missing JSON")
+
+                json_str = raw_emp[start_idx:end_idx]
+                empathy_data = json.loads(json_str)
+
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"JSON parse failed: {e} — raw: {raw_emp[:300]!r}")
+                # Optional: return fallback result instead of crashing whole request
+                empathy_data = {
+                    "category": "caution",
+                    "is_ai": False,
+                    "ai_score": 0,
+                    "scam_probability": 60,
+                    "dominant_language": "en",
+                    "technical_findings": ["Could not understand AI answer"],
+                    "title": "🤔 Hmm...",
+                    "grandma_reply": "❤️ Nana, I got confused by the answer. Try again in a minute? ❤️"
+                }    
             print("❤️ Grandchild response parsed")
 
         allowed_categories = {"scam", "ai_image", "sensitive", "viral", "safe"}

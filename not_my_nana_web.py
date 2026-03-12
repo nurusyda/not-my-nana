@@ -274,14 +274,14 @@ async def analyze(payload: dict, request: Request):
                 end_idx   = raw_emp.rfind('}') + 1
 
                 if start_idx == -1 or end_idx <= start_idx:                    
-                    print(f"JSON not found in Grandchild: {raw_emp[:200]!r}")
+                    print("❤️ JSON not found in Grandchild response")
                     raise ValueError("Grandchild missing JSON")
 
                 json_str = raw_emp[start_idx:end_idx]
                 empathy_data = json.loads(json_str)
 
             except (json.JSONDecodeError, ValueError) as e:
-                print(f"JSON parse failed: {e} — raw: {raw_emp[:300]!r}")
+                print(f"❤️ JSON parse failed for Grandchild: {type(e).__name__}")
                 # Optional: return fallback result instead of crashing whole request
                 empathy_data = {
                     "category": "caution",

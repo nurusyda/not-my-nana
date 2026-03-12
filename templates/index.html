@@ -427,7 +427,7 @@
             const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
             document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
             document.getElementById('theme-toggle').innerText = isDark ? '☀️' : '🌙';
-            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to dark theme' : 'Switch to light theme')
         }
 
         function toggleTheme() {

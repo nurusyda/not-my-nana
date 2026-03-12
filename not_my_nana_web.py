@@ -272,6 +272,8 @@ async def analyze(payload: dict, request: Request):
             try:
                 start_emp = raw_emp.find('{')
                 end_emp = raw_emp.rfind('}') + 1
+                if start_emp == -1 or end_emp == 0:
+                    raise ValueError("No JSON object found in response")
                 empathy_data = json.loads(raw_emp[start_emp:end_emp])
             except Exception:
                 print("❤️ Grandchild failed to give JSON")

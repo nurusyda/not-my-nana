@@ -8,10 +8,8 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/static/logo-192.png" type="image/png">
     
-    <!-- Android/Chrome -->
     <link rel="icon" type="image/png" sizes="192x192" href="/static/logo-192.png">
     
-    <!-- iOS -->
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,7 +24,6 @@
             --text-main: #2c3e50;
             --text-muted: #7f8c8d;
             
-            /* Surface colors (for cards, inputs, etc.) */
             --surface-main: #ffffff;
             --surface-alt: #f8f9fa;
             --surface-border: #f0f0f0;
@@ -47,6 +44,13 @@
             --color-ai: #f8f9fa;
             --border-ai: #9e9e9e;
             --text-ai: #424242;
+
+            /* NEW: Sensitive & Viral Colors */
+            --color-sensitive: #9c27b0;
+            --border-sensitive: #7b1fa2;
+            --color-viral: #ffeb3b;
+            --border-viral: #fbc02d;
+            --text-viral: #3e2723;
             
             --max-width: 400px;
         }
@@ -56,15 +60,16 @@
             --bg-main: #121212;
             --text-main: #e0e0e0;
             --text-muted: #9e9e9e;
-            
             --surface-main: #1e1e1e;
             --surface-alt: #2c2c2c;
             --surface-border: #333333;
             --surface-border-heavy: #444444;
 
-            /* Darken the AI badge slightly for better contrast in dark mode */
             --color-ai: #2c2c2c;
             --text-ai: #e0e0e0;
+
+            --color-viral: #ffd600;
+            --text-viral: #000000;
         }
 
         /* 1. Global Setup */
@@ -79,162 +84,54 @@
             -webkit-font-smoothing: antialiased;
         }
         
-        /* 2. Header */
-        h1 { 
-            font-size: 42px; 
-            color: var(--brand-accent); 
-            margin: 20px 0 10px;
-            letter-spacing: -1px;
-        }
+        h1 { font-size: 42px; color: var(--brand-accent); margin: 20px 0 10px; letter-spacing: -1px; }
         
-        /* 3. The Main Button */
         button { 
-            font-size: 28px; 
-            padding: 22px 0; 
-            margin: 20px auto; 
-            border: none; 
-            border-radius: 20px; 
-            width: 100%; 
-            max-width: var(--max-width);
-            cursor: pointer; 
-            font-weight: 800; 
-            background: var(--brand-primary);
-            color: white; 
-            display: block; 
+            font-size: 28px; padding: 22px 0; margin: 20px auto; border: none; border-radius: 20px; 
+            width: 100%; max-width: var(--max-width); cursor: pointer; font-weight: 800; 
+            background: var(--brand-primary); color: white; display: block; 
             box-shadow: 0 4px 15px var(--brand-primary-shadow);
             transition: transform 0.1s ease, box-shadow 0.1s ease;
-                
-            user-select: none; 
-            -webkit-tap-highlight-color: transparent; 
-            }
+            user-select: none; -webkit-tap-highlight-color: transparent; 
+        }
         
-            /* Tactile feedback */
-        button:active {
-            transform: scale(0.97);
-            box-shadow: 0 2px 8px var(--brand-primary-active);
-            }
+        button:active { transform: scale(0.97); box-shadow: 0 2px 8px var(--brand-primary-active); }
         
         /* 4. Result Boxes */
         .result { 
-            margin: 25px auto; 
-            padding: 30px 24px; 
-            border-radius: 28px; 
-            max-width: var(--max-width);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.01);
-            animation: slideUp 0.4s ease-out;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
+            margin: 25px auto; padding: 30px 24px; border-radius: 28px; max-width: var(--max-width);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.01); animation: slideUp 0.4s ease-out;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
         }
 
-        .result-title {
-            display: block;
-            font-size: 32px;
-            font-weight: 900;
-            margin-bottom: 15px; 
-            line-height: 1.2;
-        }
+        .result-title { display: block; font-size: 32px; font-weight: 900; margin-bottom: 15px; line-height: 1.2; }
+        .result-text { display: block; font-size: 27px; line-height: 1.4; white-space: normal; word-wrap: break-word; }
 
-        .result-text {
-            display: block;
-            font-size: 27px;
-            line-height: 1.4;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
+        /* Color States */
         .scam       { background: var(--color-scam); color: white; border: 4px solid var(--border-scam); }
         .safe       { background: var(--color-safe); color: white; border: 4px solid var(--border-safe); }
         .caution    { background: var(--color-caution); color: white; border: 4px solid var(--border-caution); }
         .ai-picture { background: var(--color-ai); color: var(--text-ai); border: 4px solid var(--border-ai); }
+        .sensitive  { background: var(--color-sensitive); color: white; border: 4px solid var(--border-sensitive); }
+        .viral      { background: var(--color-viral); color: var(--text-viral); border: 4px solid var(--border-viral); }
         
-        /* 5. Loading State */
-        #loading { 
-            display: none; 
-            font-size: 24px; 
-            color: var(--brand-primary);
-            margin: 40px 0;
-            font-weight: bold;
-            animation: pulse 1.5s infinite;
-        }
+        #loading { display: none; font-size: 24px; color: var(--brand-primary); margin: 40px 0; font-weight: bold; animation: pulse 1.5s infinite; }
         
-        /* 6. History Section */
-        #history { 
-            margin-top: 50px; 
-            text-align: left; 
-            max-width: var(--max-width);
-            margin-left: auto; 
-            margin-right: auto; 
-            border-top: 2px solid #eee;
-            padding-top: 20px;
-        }
-        
-        #history h3 { 
-            font-size: 18px; 
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px; 
-        }
+        #history { margin-top: 50px; text-align: left; max-width: var(--max-width); margin-left: auto; margin-right: auto; border-top: 2px solid #eee; padding-top: 20px; }
+        #history h3 { font-size: 18px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
         
         .history-item { 
-            background: var(--surface-main); 
-            padding: 16px; 
-            margin: 12px 0; 
-            border-radius: 18px; 
-            font-size: 16px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            border: 1px solid var(--surface-border); 
+            background: var(--surface-main); padding: 16px; margin: 12px 0; border-radius: 18px; 
+            font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--surface-border); 
         }
 
-        .history-item span {
-            white-space: normal; 
-            word-break: break-word; 
-            display: block;         
-            margin-top: 8px;        
-        }
+        .history-item span { white-space: normal; word-break: break-word; display: block; margin-top: 8px; }
         
-        /* 7. Clear Button */
-        .clear-btn {
-            background: var(--surface-alt); /* Updated */
-            color: var(--text-muted);
-            font-size: 15px;
-            padding: 10px 20px;
-            margin: 20px auto 30px;
-            border-radius: 12px;
-            border: 1px solid var(--surface-border-heavy); /* Updated */
-            cursor: pointer;
-            transition: all 0.12s ease;
-        }
-        .clear-btn:active {
-            background: #ffebee;
-            color: var(--brand-accent);
-            border-color: #ef9a9a;
-        }
+        .clear-btn { background: var(--surface-alt); color: var(--text-muted); font-size: 15px; padding: 10px 20px; margin: 20px auto 30px; border-radius: 12px; border: 1px solid var(--surface-border-heavy); cursor: pointer; transition: all 0.12s ease; }
+        .clear-btn:active { background: #ffebee; color: var(--brand-accent); border-color: #ef9a9a; }
         
-        /* 8. Production Button */
-        #show-test-btn {
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        #show-test-btn:hover {
-            opacity: 1;
-            transform: scale(1.1);
-            background: #444;
-        }
-
-        /* Animations */
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -267,24 +164,20 @@
     <div id="test-panel" style="display: none; margin: 40px auto; padding: 20px; background: var(--surface-alt); border: 2px dashed var(--surface-border-heavy); border-radius: 16px; max-width: 420px; text-align: center;">
         <p style="color: #888; font-size: 15px; margin: 0 0 15px;">🛠️ Developer Test Mode</p>
         
-        <button onclick="simulateResult('scam')" style="background:var(--color-scam); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">Scam</button>
-        <button onclick="simulateResult('caution')" style="background:var(--color-caution); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">Caution</button>
-        <button onclick="simulateResult('ai-picture')" style="background:var(--border-ai); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">AI Picture</button>
-        <button onclick="simulateResult('safe')" style="background:var(--color-safe); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px;">Safe</button>
+        <button onclick="simulateResult('scam')" style="background:var(--color-scam); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Scam</button>
+        <button onclick="simulateResult('ai_image')" style="background:var(--border-ai); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">AI Picture</button>
+        <button onclick="simulateResult('sensitive')" style="background:var(--color-sensitive); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Sensitive</button>
+        <button onclick="simulateResult('viral')" style="background:var(--color-viral); color:var(--text-viral); margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Viral</button>
+        <button onclick="simulateResult('safe')" style="background:var(--color-safe); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Safe</button>
         
         <br><br>
-        
-        <button onclick="document.getElementById('test-panel').style.display='none'" style="background:#888; color:white; padding:8px 16px; border:none; border-radius:8px; font-size:14px;">Hide Tools</button>
+        <button onclick="document.getElementById('test-panel').style.display='none'" style="background:#888; color:white; padding:8px 16px; border:none; border-radius:8px; font-size:14px; width: auto;">Hide Tools</button>
     </div>
- 
-    <script>
-        // A. Setup Environment & "Session Fridge"
-        const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-        // This holds the actual images in-memory only (wiped on refresh)
+    <script>
+        const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('ngrok');
         const sessionImages = {};
         
-        // Prevent XSS
         function escapeHtml(text) {
             if (!text) return "";
             const div = document.createElement('div');
@@ -292,78 +185,71 @@
             return div.innerHTML;
         }
 
-        // THE BRAIN: Defines categories based on score (Aligned with Backend)
+        // UPDATED: Logic to support the new "Category" field from Detective AI
         function getResultType(data) {
+            if (data.category) {
+                if (data.category === 'ai_image') return 'ai-picture';
+                return data.category; 
+            }
+            // Fallback for old data
             const score = Number(data.scam_probability) || 0;
             if (score >= 80) return 'scam';
             if (score >= 60) return 'caution';
-            if (data.is_ai || (score >= 30 && score <= 59)) return 'ai-picture';
+            if (data.is_ai) return 'ai-picture';
             return 'safe';
         }
         
-        // B. Toggle Function for Dev Tools
         function toggleTestPanel() {
             const panel = document.getElementById('test-panel');
             panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'block' : 'none';
         }
 
-        // C. Simulate Function (The "Practice" Button)
-        function simulateResult(type) {
-            let scam_probability = 15;
-            let grandma_reply = "✅ This looks safe, Nana! No need to worry. ❤️";
-            let title = "✅ Looks safe!";
+        // UPDATED: Simulate including new categories
+        function simulateResult(category) {
+            let data = {
+                category: category,
+                scam_probability: 10,
+                title: "✅ Looks safe, Nana!",
+                grandma_reply: "✅ This looks safe, Nana! I couldn't find anything worrying here. ❤️"
+            };
         
-            if (type === 'scam') {
-                scam_probability = 92;
-                grandma_reply = "🚨 Nana, this looks like a scam! Do NOT click any links. Call me! ❤️";
-                title = "🚨 SCAM ALERT!";
-            } else if (type === 'caution') {
-                scam_probability = 72;
-                grandma_reply = "🤔 This looks suspicious. Let's look at it together before you do anything. ❤️";
-                title = "🤔 Let’s Talk";
-            } else if (type === 'ai-picture') {
-                scam_probability = 50;
-                grandma_reply = "🖼️ Nana, this looks like a picture made by AI (a computer program). "
-                              + "It's not a real photo of anyone or anything. "
-                              + "If someone sent it and says it's real, please be extra careful and show it to me ❤️";
-                title = "🖼️ AI-Generated Picture";
+            if (category === 'scam') {
+                data.scam_probability = 95;
+                data.title = "🚨 SCAM ALERT!";
+                data.grandma_reply = "🚨 Nana, this is a scam! Please don't click anything or give them money. Call me! ❤️";
+            } else if (category === 'ai_image') {
+                data.title = "🖼️ AI-Generated Picture";
+                data.grandma_reply = "🖼️ Nana, this picture was made by a computer program (AI). It's not a real photo of a person or place! ❤️";
+            } else if (category === 'sensitive') {
+                data.title = "💜 Sensitive Topic";
+                data.grandma_reply = "💜 Nana, this looks like it's designed to make people angry or upset about politics. Let's not let it ruin our day! ❤️";
+            } else if (category === 'viral') {
+                data.title = "🟡 Viral Clickbait";
+                data.grandma_reply = "🟡 Nana, this is just a 'chain letter' or gossip meant to get lots of shares. It's harmless, but probably not true! ❤️";
             }
 
-            const data = { scam_probability, grandma_reply, title };
             const className = getResultType(data);
-            
             document.getElementById('result').innerHTML = `
                 <div class="result ${className}">
-                    <span class="result-title">${escapeHtml(title)}</span>
+                    <span class="result-title">${escapeHtml(data.title)}</span>
                     <span class="result-text">${escapeHtml(data.grandma_reply)}</span>
                 </div>
             `;
-            
             saveToHistory(data);
         }
 
         function readHistory() {
-            try {
-                const parsed = JSON.parse(localStorage.getItem('nanaHistory') || '[]');
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (err) {
-                console.warn('Unable to read nanaHistory', err);
-                return [];
-            }
+            try { return JSON.parse(localStorage.getItem('nanaHistory') || '[]'); } 
+            catch { return []; }
         }
         
-        // D. History Logic (Session-Only Memory)
         function saveToHistory(data, b64 = '', mime = '') {
             if (!data || !data.grandma_reply) return;
             let history = readHistory();
-            
-            const id = Date.now().toString(); // Use String ID
+            const id = Date.now().toString();
 
-            // Save image to the temporary Fridge
-            if (b64 && mime) {
-                sessionImages[id] = `data:image/${mime};base64,${b64}`;
-            }
-                      
+            if (b64 && mime) sessionImages[id] = `data:image/${mime};base64,${b64}`;
+                    
             history.unshift({
                 id: id,
                 time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
@@ -376,11 +262,7 @@
                 if (removed && removed.id) delete sessionImages[removed.id];
             }
             
-           try {
-                localStorage.setItem('nanaHistory', JSON.stringify(history));
-           } catch (err) {
-                console.warn('Unable to persist nanaHistory', err);
-           }
+            localStorage.setItem('nanaHistory', JSON.stringify(history));
             renderHistory();
         }
 
@@ -389,18 +271,20 @@
             let history = readHistory();
             
             list.innerHTML = history.map(item => {
-                const colorVar = item.type === 'scam' ? 'var(--color-scam)' :
-                                 item.type === 'caution' ? 'var(--color-caution)' :
-                                 item.type === 'ai-picture' ? 'var(--text-ai)' : 'var(--color-safe)';
-                // Defensive check for the ID and the Fridge
+                let colorVar = 'var(--color-safe)';
+                if (item.type === 'scam') colorVar = 'var(--color-scam)';
+                else if (item.type === 'caution') colorVar = 'var(--color-caution)';
+                else if (item.type === 'ai-picture') colorVar = 'var(--text-ai)';
+                else if (item.type === 'sensitive') colorVar = 'var(--color-sensitive)';
+                else if (item.type === 'viral') colorVar = 'var(--border-viral)';
+
                 const previewUrl = (item.id && sessionImages[item.id]) ? sessionImages[item.id] : '';
                 
                 return `
                 <div class="history-item">
-                    <small>${item.time}</small><br>                 
+                    <small>${item.time}</small><br>
                     ${previewUrl ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="Scan preview">` : ''}
-                    <span style="color: ${colorVar}"> ${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}
-                    </span>
+                    <span style="color: ${colorVar}"> ${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}</span>
                 </div>
                 `;
             }).join('');
@@ -409,22 +293,17 @@
         function clearHistory() {
             if (confirm("Nana, do you want to clear your recent checks? ❤️")) {
                 localStorage.removeItem('nanaHistory');
-                // Explicitly clear the Fridge
                 Object.keys(sessionImages).forEach(id => delete sessionImages[id]);
                 renderHistory();
             }
         }
 
-        // E. Main Upload Logic
         async function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
             input.value = ''; 
 
-            if (file.size > 5 * 1024 * 1024) {
-                alert("Sorry Nana, this picture is too big (max 5MB)");
-                return;
-            }
+            if (file.size > 5 * 1024 * 1024) { alert("Sorry Nana, this picture is too big (max 5MB)"); return; }
 
             const reader = new FileReader();
             reader.onload = async function(e) {
@@ -445,18 +324,10 @@
                     document.getElementById('loading').style.display = 'none';
 
                     const className = getResultType(data);
-                    let displayTitle = data.title;
-
-                    if (className === 'ai-picture' && (!displayTitle || !displayTitle.includes('🖼️'))) {
-                        displayTitle = "🖼️ AI-Generated Picture";
-                    } else if (!displayTitle) {
-                    displayTitle =  className === 'scam' ? '🚨 SCAM ALERT!' : 
-                                    className === 'caution' ? '🤔 Let’s Talk' : '✅ Looks safe, Nana!';
-                    }
-                                       
                     document.getElementById('result').innerHTML = `
                         <div class="result ${className}">
-                            <span class="result-title">${escapeHtml(displayTitle)}</span> <span class="result-text">${escapeHtml(data.grandma_reply)}</span>
+                            <span class="result-title">${escapeHtml(data.title)}</span> 
+                            <span class="result-text">${escapeHtml(data.grandma_reply)}</span>
                         </div>
                     `;
                     saveToHistory(data, b64, mime);
@@ -465,7 +336,7 @@
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('result').innerHTML = `
                         <div class="result caution">
-                            ❤️ Nana, something went wrong... Please try a smaller picture or wait a moment ❤️
+                            ❤️ Nana, something went wrong... Please try again or use a smaller picture ❤️
                         </div>
                     `;
                     console.error(err);
@@ -474,12 +345,9 @@
             reader.readAsDataURL(file);
         }
 
-        // F. Theme Logic
         function initTheme() {
-            // Check if Nana previously saved a preference, or if her phone's system settings are on Dark Mode
             const savedTheme = localStorage.getItem('nanaTheme');
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
             if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
                 document.documentElement.setAttribute('data-theme', 'dark');
                 document.getElementById('theme-toggle').innerText = '☀️';
@@ -488,23 +356,18 @@
 
         function toggleTheme() {
             const root = document.documentElement;
-            const currentTheme = root.getAttribute('data-theme');
             const toggleBtn = document.getElementById('theme-toggle');
-            
-            if (currentTheme === 'dark') {
-                // Switch to Light
+            if (root.getAttribute('data-theme') === 'dark') {
                 root.removeAttribute('data-theme');
                 localStorage.setItem('nanaTheme', 'light');
                 toggleBtn.innerText = '🌙';
             } else {
-                // Switch to Dark
                 root.setAttribute('data-theme', 'dark');
                 localStorage.setItem('nanaTheme', 'dark');
                 toggleBtn.innerText = '☀️';
             }
         }
 
-        // Startup
         window.onload = function() {
             initTheme();
             renderHistory();
@@ -512,7 +375,6 @@
                 document.getElementById('show-test-btn').style.display = 'block';
             }
         };
-
     </script>
 </body>
 </html>

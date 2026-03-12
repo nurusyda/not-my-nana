@@ -86,18 +86,93 @@
         
         h1 { font-size: 42px; color: var(--brand-accent); margin: 20px 0 10px; letter-spacing: -1px; }
         
-        button { 
-            font-size: 28px; padding: 22px 0; margin: 20px auto; border: none; border-radius: 20px; 
+        /* --- NEW: Subtitle & Helper Text --- */
+        .subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            margin: -5px auto 25px;
+            font-weight: 500;
+        }
+
+        .helper-text {
+            margin-top: 12px;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.4;
+            max-width: var(--max-width);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- NEW: Static Color Legend (Placed at the bottom) --- */
+        .static-legend {
+            max-width: var(--max-width);
+            margin: 20px auto 48px; 
+            text-align: left;
+            padding: 15px;
+            background: var(--surface-main);
+            border-radius: 28px;
+            border: 1px solid var(--surface-border);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+        }
+
+        .legend-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin: 0 0 15px 0;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            color: var(--text-main);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 40%;
+            display: inline-block;
+            margin-right: 12px;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        :root[data-theme="dark"] .static-legend {
+            background: var(--surface-alt);
+            border-color: var(--surface-border-heavy);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        @media (max-width: 360px) {
+            .legend-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Buttons */
+        button.main-btn { 
+            font-size: 28px; padding: 22px 0; margin: 20px auto 0; border: none; border-radius: 20px; 
             width: 100%; max-width: var(--max-width); cursor: pointer; font-weight: 800; 
             background: var(--brand-primary); color: white; display: block; 
             box-shadow: 0 4px 15px var(--brand-primary-shadow);
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             user-select: none; -webkit-tap-highlight-color: transparent; 
         }
+        button.main-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px var(--brand-primary-active); }
         
-        button:active { transform: scale(0.97); box-shadow: 0 2px 8px var(--brand-primary-active); }
-        
-        /* 4. Result Boxes */
+        /* Result Boxes */
         .result { 
             margin: 25px auto; padding: 30px 24px; border-radius: 28px; max-width: var(--max-width);
             box-shadow: 0 12px 30px rgba(0,0,0,0.01); animation: slideUp 0.4s ease-out;
@@ -107,7 +182,6 @@
         .result-title { display: block; font-size: 32px; font-weight: 900; margin-bottom: 15px; line-height: 1.2; }
         .result-text { display: block; font-size: 27px; line-height: 1.4; white-space: normal; word-wrap: break-word; }
 
-        /* Color States */
         .scam       { background: var(--color-scam); color: white; border: 4px solid var(--border-scam); }
         .safe       { background: var(--color-safe); color: white; border: 4px solid var(--border-safe); }
         .caution    { background: var(--color-caution); color: white; border: 4px solid var(--border-caution); }
@@ -136,19 +210,34 @@
 </head>
 <body>
     <button id="theme-toggle" onclick="toggleTheme()" 
-        style="position: absolute; top: 15px; right: 15px; width: 45px; height: 45px; font-size: 24px; padding: 0; background: none; box-shadow: none; margin: 0; display: inline-block;">
+        style="position: absolute; top: 15px; right: 15px; width: 45px; height: 45px; font-size: 24px; padding: 0; background: none; box-shadow: none; margin: 0; display: inline-block; ">
         🌙
     </button>
+    
     <h1>❤️ Not My Nana</h1>
+    <p class="subtitle">Check if that message is a scam – for Nana</p>
 
-    <button ontouchstart="if('vibrate' in navigator) navigator.vibrate(10)" onclick="document.getElementById('file').click()">
+    <button class="main-btn" ontouchstart="if('vibrate' in navigator) navigator.vibrate(10)" onclick="document.getElementById('file').click()">
         📸 Choose Screenshot
     </button>
+    
+    <p class="helper-text">Upload any screenshot. We'll check for scams & fake photos and give you a simple color-coded safety score.</p>
     
     <input type="file" id="file" accept="image/*" style="display:none" onchange="uploadFile(this)">
 
     <div id="loading">Thinking for Nana... ❤️</div>
     <div id="result"></div>
+
+    <div class="static-legend">
+        <h4 class="legend-title">Color Guide</h4>
+        <div class="legend-grid">
+        <div class="guide-item"><span class="dot" style="background: var(--color-safe);"></span> ✅ Safe / Real</div>
+        <div class="guide-item"><span class="dot" style="background: var(--color-scam);"></span> ❌ Scam! Danger</div>
+        <div class="guide-item"><span class="dot" style="background: var(--color-caution);"></span> ⚠️ Be careful</div>
+        <div class="guide-item"><span class="dot" style="background: var(--border-ai);"></span> 🤖 Fake photo (AI)</div>
+        <div class="guide-item"><span class="dot" style="background: var(--color-sensitive);"></span> 👨‍👩‍👧‍👦 Talk to family</div>
+        <div class="guide-item"><span class="dot" style="background: var(--color-viral);"></span> 📰 Clickbait News</div></div>
+    </div>
 
     <div id="history">
         <h3>📜 Recent Checks by Nana (last 3)</h3>
@@ -163,13 +252,11 @@
     
     <div id="test-panel" style="display: none; margin: 40px auto; padding: 20px; background: var(--surface-alt); border: 2px dashed var(--surface-border-heavy); border-radius: 16px; max-width: 420px; text-align: center;">
         <p style="color: #888; font-size: 15px; margin: 0 0 15px;">🛠️ Developer Test Mode</p>
-        
         <button onclick="simulateResult('scam')" style="background:var(--color-scam); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Scam</button>
         <button onclick="simulateResult('ai_image')" style="background:var(--border-ai); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">AI Picture</button>
         <button onclick="simulateResult('sensitive')" style="background:var(--color-sensitive); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Sensitive</button>
         <button onclick="simulateResult('viral')" style="background:var(--color-viral); color:var(--text-viral); margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Viral</button>
         <button onclick="simulateResult('safe')" style="background:var(--color-safe); color:white; margin:6px; padding:12px 20px; border:none; border-radius:10px; font-size:16px; width: auto; display: inline-block;">Safe</button>
-        
         <br><br>
         <button onclick="document.getElementById('test-panel').style.display='none'" style="background:#888; color:white; padding:8px 16px; border:none; border-radius:8px; font-size:14px; width: auto;">Hide Tools</button>
     </div>
@@ -185,13 +272,11 @@
             return div.innerHTML;
         }
 
-        // UPDATED: Logic to support the new "Category" field from Detective AI
         function getResultType(data) {
             if (data.category) {
                 if (data.category === 'ai_image') return 'ai-picture';
                 return data.category; 
             }
-            // Fallback for old data
             const score = Number(data.scam_probability) || 0;
             if (score >= 80) return 'scam';
             if (score >= 60) return 'caution';
@@ -204,7 +289,6 @@
             panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'block' : 'none';
         }
 
-        // UPDATED: Simulate including new categories
         function simulateResult(category) {
             let data = {
                 category: category,

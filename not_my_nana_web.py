@@ -217,7 +217,7 @@ async def analyze(payload: dict, request: Request):
                         {"role": "system", "content": STEP2_EMPATHY_PROMPT},
                         {"role": "user", "content": f"Findings: {json.dumps(analysis_data)}"}
                     ],
-                    "temperature": 0.1
+                    "temperature": 0.0
                 },
                 headers=headers, timeout=30.0
             )

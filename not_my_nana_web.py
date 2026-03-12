@@ -298,7 +298,7 @@ async def analyze(payload: dict, request: Request):
     except HTTPException:
         # Pass through FastAPI exceptions (like rate limits and file size errors)
         raise
-    except Exception as e:
+    except Exception:
         import traceback
         print("🚨 PIPELINE ERROR")
         traceback.print_exc() 

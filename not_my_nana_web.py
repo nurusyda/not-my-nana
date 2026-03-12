@@ -5,7 +5,8 @@ import json
 import base64
 import time
 import asyncio
-import httpx  # Faster, non-blocking replacement for requests
+import random
+import httpx
 import binascii
 from PIL import Image, ImageDraw, UnidentifiedImageError
 import pytesseract
@@ -46,7 +47,7 @@ class ImageTooLargeError(ValueError):
 def scrub_image_and_extract_text(img_bytes):
     """Physically redacts sensitive text locally."""
     try:
-        # 1. Open without converting yet (Coderabbit Fix #1)
+        # 1. OOpen image without converting to allow dimension checks
         image = Image.open(io.BytesIO(img_bytes))
         
         # 2. Check for "Decompression Bombs" (Pixel check)
@@ -60,7 +61,7 @@ def scrub_image_and_extract_text(img_bytes):
         # OCR Stage
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
         
-        # PII Fortress
+        # PII Detection Patterns
         pii_pattern = re.compile(
             r'('
             r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|'            
@@ -75,7 +76,7 @@ def scrub_image_and_extract_text(img_bytes):
         # 1. Filter out "Ghost" rows (structural rows like paragraphs/blocks)
         text_indices = [
             i for i in range(len(data['text'])) 
-            if data['text'][i].strip() and data.get('conf', [-1]*len(data['text']))[i] != -1
+            if data['text'][i].strip() and data.get('conf', [0]*len(data['text']))[i] != -1
         ]
         
         # 2. Build the full text using ONLY real words
@@ -143,7 +144,31 @@ async def manifest():
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# --- THE ANALYZE ENDPOINT (Now Fully Async + Robust JSON Parsing) ---
+# --- ASYNC RETRY HELPER ---
+async def fetch_with_retries(client: httpx.AsyncClient, url: str, json_data: dict, headers: dict, timeout: float, max_retries: int = 3):
+    """Fetches from API with exponential backoff for transient network/5xx errors."""
+    for attempt in range(max_retries):
+        try:
+            resp = await client.post(url, json=json_data, headers=headers, timeout=timeout)
+            # Manually trigger exception for 5xx errors to force a retry
+            if resp.status_code >= 500:
+                resp.raise_for_status()
+            resp.raise_for_status() # Handle 4xx errors normally
+            return resp
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            # If it's a 4xx error (like 400 Bad Request or 401 Unauthorized), do NOT retry.            
+            if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500:
+                raise
+            
+            if attempt == max_retries - 1:
+                raise # Out of retries, fail completely
+            
+            # Exponential backoff with jitter (e.g., ~1.2s, ~2.5s)
+            sleep_time = (2 ** attempt) + random.uniform(0, 1)
+            print(f"⚠️ API Network Error ({e}). Retrying in {sleep_time:.2f}s... (Attempt {attempt + 1}/{max_retries})")
+            await asyncio.sleep(sleep_time)
+
+# --- THE ANALYZE ENDPOINT ---
 @app.post("/analyze")
 async def analyze(payload: dict, request: Request):
     b64 = payload.get("base64")
@@ -185,9 +210,10 @@ async def analyze(payload: dict, request: Request):
             headers = {"Authorization": f"Bearer {NOVA_API_KEY}", "Content-Type": "application/json"}
             
             # --- CALL 1: THE DETECTIVE ---
-            resp1 = await client.post(
+            resp1 = await fetch_with_retries(
+                client,
                 "https://api.nova.amazon.com/v1/chat/completions",
-                json={
+                json_data={
                     "model": "nova-2-lite-v1",
                     "messages": [
                         {"role": "system", "content": STEP1_ANALYSIS_PROMPT},
@@ -199,8 +225,7 @@ async def analyze(payload: dict, request: Request):
                     "temperature": 0.0
                 },
                 headers=headers, timeout=25.0
-            )
-            resp1.raise_for_status()
+            )            
             raw_det = resp1.json()["choices"][0]["message"]["content"]
             
             # Robust JSON Parsing for Detective
@@ -217,9 +242,10 @@ async def analyze(payload: dict, request: Request):
             print(f"🕵️ DETECTIVE: {analysis_data}")
 
             # --- CALL 2: THE GRANDCHILD ---
-            resp2 = await client.post(
+            resp2 = await fetch_with_retries(
+                client,
                 "https://api.nova.amazon.com/v1/chat/completions",
-                json={
+                json_data={
                     "model": "nova-2-lite-v1",
                     "messages": [
                         {"role": "system", "content": STEP2_EMPATHY_PROMPT},
@@ -228,8 +254,7 @@ async def analyze(payload: dict, request: Request):
                     "temperature": 0.0
                 },
                 headers=headers, timeout=30.0
-            )
-            resp2.raise_for_status()
+            )            
             raw_emp = resp2.json()["choices"][0]["message"]["content"]
             
             # Robust JSON Parsing for Grandchild
@@ -239,7 +264,7 @@ async def analyze(payload: dict, request: Request):
                 empathy_data = json.loads(raw_emp[start_emp:end_emp])
             except Exception:
                 print(f"❤️ Grandchild failed to give JSON. Raw: {raw_emp}")
-                raise ValueError("Grandchild response was not valid JSON")
+                raise ValueError("Grandchild response was not valid JSON") from None
                 
             print(f"❤️ GRANDCHILD: {empathy_data}")
 

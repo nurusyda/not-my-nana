@@ -45,7 +45,7 @@
             --border-ai: #9e9e9e;
             --text-ai: #424242;
 
-            /* NEW: Sensitive & Viral Colors */
+            /* Sensitive & Viral Colors */
             --color-sensitive: #9c27b0;
             --border-sensitive: #7b1fa2;
             --color-viral: #ffeb3b;
@@ -86,7 +86,7 @@
         
         h1 { font-size: 42px; color: var(--brand-accent); margin: 20px 0 10px; letter-spacing: -1px; }
         
-        /* --- NEW: Subtitle & Helper Text --- */
+        /* --- Subtitle & Helper Text --- */
         .subtitle {
             font-size: 20px;
             color: var(--text-muted);
@@ -104,7 +104,7 @@
             margin-right: auto;
         }
 
-        /* --- NEW: Static Color Legend (Placed at the bottom) --- */
+        /* --- Static Color Legend --- */
         .static-legend {
             max-width: var(--max-width);
             margin: 20px auto 48px; 
@@ -346,7 +346,6 @@
                 if (removed && removed.id) delete sessionImages[removed.id];
             }
             
-            localStorage.setItem('nanaHistory', JSON.stringify(history));
             try {
                 localStorage.setItem('nanaHistory', JSON.stringify(history));
             } catch (e) {

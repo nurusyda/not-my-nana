@@ -436,9 +436,13 @@
         function initTheme() {
             const savedTheme = localStorage.getItem('nanaTheme');
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const toggleBtn = document.getElementById('theme-toggle');
             if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                document.getElementById('theme-toggle').innerText = '☀️';
+                toggleBtn.innerText = '☀️';
+                toggleBtn.setAttribute('aria-label', 'Switch to light theme');
+            } else {
+                toggleBtn.setAttribute('aria-label', 'Switch to dark theme');
             }
         }
 
@@ -449,10 +453,12 @@
                 root.removeAttribute('data-theme');
                 localStorage.setItem('nanaTheme', 'light');
                 toggleBtn.innerText = '🌙';
+                toggleBtn.setAttribute('aria-label', 'Switch to dark theme');
             } else {
                 root.setAttribute('data-theme', 'dark');
                 localStorage.setItem('nanaTheme', 'dark');
                 toggleBtn.innerText = '☀️';
+                toggleBtn.setAttribute('aria-label', 'Switch to light theme');
             }
         }
 

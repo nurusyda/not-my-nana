@@ -19,6 +19,8 @@ from cachetools import TTLCache
 
 from prompts import STEP1_ANALYSIS_PROMPT, STEP2_EMPATHY_PROMPT
 
+load_dotenv()
+
 # --- WINDOWS TESSERACT CONFIG ---
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = os.getenv(
@@ -26,7 +28,6 @@ if os.name == 'nt':
         r'C:\Program Files\Tesseract-OCR\tesseract.exe'
     )
 
-load_dotenv()
 NOVA_API_KEY = os.getenv("NOVA_API_KEY")
 
 if not NOVA_API_KEY:
@@ -118,7 +119,7 @@ def scrub_image_and_extract_text(img_bytes):
         
         return redacted_b64, " ".join(scrubbed_words)
         
-    except UnidentifiedImageError:
+    except (UnidentifiedImageError, OSError):
         raise
     except ImageTooLargeError:
         raise
@@ -198,7 +199,7 @@ async def analyze(payload: dict, request: Request):
         # 2. Offload OCR to a thread so it doesn't freeze the app
         try:
             safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
-        except UnidentifiedImageError:
+        except (UnidentifiedImageError, OSError):
             raise HTTPException(status_code=415, detail="Corrupt or invalid image file") from None
         except ImageTooLargeError as e:
             raise HTTPException(status_code=413, detail=str(e)) from e
@@ -230,7 +231,7 @@ async def analyze(payload: dict, request: Request):
             try:
                 raw_det = resp1_data["choices"][0]["message"]["content"]
             except (KeyError, IndexError) as e:
-                print(f"🕵️ Unexpected API response structure: {resp1_data}")
+                print("🕵️ Unexpected detective response structure")
                 raise ValueError("Detective API returned unexpected response format") from e
             
             # Robust JSON Parsing for Detective
@@ -241,10 +242,10 @@ async def analyze(payload: dict, request: Request):
                     raise ValueError("No JSON object found in response")
                 analysis_data = json.loads(raw_det[start_det:end_det])
             except Exception:
-                print(f"🕵️ Detective failed to give JSON. Raw: {raw_det}")
+                print("🕵️ Detective failed to give JSON")
                 raise ValueError("Detective response was not valid JSON") from None
                 
-            print(f"🕵️ DETECTIVE: {analysis_data}")
+            print("🕵️ Detective analysis parsed")
 
             # --- CALL 2: THE GRANDCHILD ---
             resp2 = await fetch_with_retries(
@@ -264,7 +265,7 @@ async def analyze(payload: dict, request: Request):
             try:
                 raw_emp = resp2_data["choices"][0]["message"]["content"]
             except (KeyError, IndexError) as e:
-                print(f"❤️ Unexpected API response structure: {resp2_data}")
+                print("❤️ Unexpected grandchild response structure")
                 raise ValueError("Grandchild API returned unexpected response format") from e
             
             # Robust JSON Parsing for Grandchild
@@ -273,10 +274,10 @@ async def analyze(payload: dict, request: Request):
                 end_emp = raw_emp.rfind('}') + 1
                 empathy_data = json.loads(raw_emp[start_emp:end_emp])
             except Exception:
-                print(f"❤️ Grandchild failed to give JSON. Raw: {raw_emp}")
+                print("❤️ Grandchild failed to give JSON")
                 raise ValueError("Grandchild response was not valid JSON") from None
                 
-            print(f"❤️ GRANDCHILD: {empathy_data}")
+            print("❤️ Grandchild response parsed")
 
         allowed_categories = {"scam", "ai_image", "sensitive", "viral", "safe"}
         category = analysis_data.get("category")
@@ -299,7 +300,7 @@ async def analyze(payload: dict, request: Request):
         raise
     except Exception as e:
         import traceback
-        print(f"🚨 PIPELINE ERROR: {e}")
+        print("🚨 PIPELINE ERROR")
         traceback.print_exc() 
         return {
             "category": "caution",

@@ -231,12 +231,12 @@
     <div class="static-legend">
         <h4 class="legend-title">Color Guide</h4>
         <div class="legend-grid">
-        <div class="guide-item"><span class="dot" style="background: var(--color-safe);"></span> ✅ Safe / Real</div>
-        <div class="guide-item"><span class="dot" style="background: var(--color-scam);"></span> ❌ Scam! Danger</div>
-        <div class="guide-item"><span class="dot" style="background: var(--color-caution);"></span> ⚠️ Be careful</div>
-        <div class="guide-item"><span class="dot" style="background: var(--border-ai);"></span> 🤖 Fake photo (AI)</div>
-        <div class="guide-item"><span class="dot" style="background: var(--color-sensitive);"></span> 👨‍👩‍👧‍👦 Talk to family</div>
-        <div class="guide-item"><span class="dot" style="background: var(--color-viral);"></span> 📰 Clickbait News</div></div>
+        <div class="legend-item"><span class="dot" style="background: var(--color-safe);"></span> ✅ Safe / Real</div>
+        <div class="legend-item"><span class="dot" style="background: var(--color-scam);"></span> ❌ Scam! Danger</div>
+        <div class="legend-item"><span class="dot" style="background: var(--color-caution);"></span> ⚠️ Be careful</div>
+        <div class="legend-item"><span class="dot" style="background: var(--border-ai);"></span> 🤖 Fake photo (AI)</div>
+        <div class="legend-item"><span class="dot" style="background: var(--color-sensitive);"></span> 👨‍👩‍👧‍👦 Talk to family</div>
+        <div class="legend-item"><span class="dot" style="background: var(--color-viral);"></span> 📰 Clickbait News</div></div>
     </div>
 
     <div id="history">
@@ -347,6 +347,11 @@
             }
             
             localStorage.setItem('nanaHistory', JSON.stringify(history));
+            try {
+                localStorage.setItem('nanaHistory', JSON.stringify(history));
+            } catch (e) {
+                console.warn('Could not save history:', e);
+            }
             renderHistory();
         }
 

@@ -73,7 +73,7 @@ def scrub_image_and_extract_text(img_bytes):
         # 1. Filter out "Ghost" rows (structural rows like paragraphs/blocks)
         text_indices = [
             i for i in range(len(data['text'])) 
-            if data['text'][i].strip() and data.get('conf', [0])[i] != -1
+            if data['text'][i].strip() and data.get('conf', [-1]*len(data['text']))[i] != -1
         ]
         
         # 2. Build the full text using ONLY real words
@@ -114,7 +114,7 @@ def scrub_image_and_extract_text(img_bytes):
         
     except Exception as e:
         print(f"⚠️ Redaction Error: {e}")
-        raise ValueError(str(e))
+        raise ValueError(str(e)) from e
 
 # --- PWA MANIFEST ---
 @app.get("/manifest.json")
@@ -159,7 +159,7 @@ async def analyze(payload: dict, request: Request):
         try:
             img_bytes = base64.b64decode(b64, validate=True)
         except (binascii.Error, ValueError):
-            raise HTTPException(status_code=400, detail="Invalid base64 image data")
+            raise HTTPException(status_code=400, detail="Invalid base64 image data") from None
 
         if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
@@ -168,9 +168,9 @@ async def analyze(payload: dict, request: Request):
         try:
             safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
         except UnidentifiedImageError:
-            raise HTTPException(status_code=415, detail="Corrupt or invalid image file")
+            raise HTTPException(status_code=415, detail="Corrupt or invalid image file") from None
         except ValueError as e:
-            raise HTTPException(status_code=413, detail=str(e))
+            raise HTTPException(status_code=413, detail=str(e)) from e
 
         ocr_context = extracted_text if extracted_text.strip() else "[No text detected]"
 
@@ -201,10 +201,12 @@ async def analyze(payload: dict, request: Request):
             try:
                 start_det = raw_det.find('{')
                 end_det = raw_det.rfind('}') + 1
+                if start_det == -1 or end_det == 0:
+                    raise ValueError("No JSON object found in response")
                 analysis_data = json.loads(raw_det[start_det:end_det])
             except Exception:
                 print(f"🕵️ Detective failed to give JSON. Raw: {raw_det}")
-                raise ValueError("Detective response was not valid JSON")
+                raise ValueError("Detective response was not valid JSON") from None
                 
             print(f"🕵️ DETECTIVE: {analysis_data}")
 
@@ -252,6 +254,7 @@ async def analyze(payload: dict, request: Request):
         traceback.print_exc() 
         return {
             "category": "caution",
+            "is_ai": False,
             "scam_probability": 50,
             "title": "🔌 Connection Error",
             "grandma_reply": "❤️ Nana, my brain is having trouble connecting. Please try again in a moment ❤️"

@@ -28,8 +28,7 @@ if not NOVA_API_KEY:
     print("❌ ERROR: .env file found, but NOVA_API_KEY is empty!")
     raise RuntimeError("NOVA_API_KEY environment variable is missing")
 else:
-    # This prints only the first 5 characters so your key stays secret 
-    print(f"✅ API Key Loaded: {NOVA_API_KEY[:5]}*****************")
+    print("✅ NOVA_API_KEY loaded")
 
 app = FastAPI(title="Not My Nana ❤️")
 templates = Jinja2Templates(directory="templates")
@@ -44,10 +43,6 @@ request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
 
 # --- THE PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
-    """
-    Physically redacts sensitive text from the image before it ever hits the cloud.
-    This version uses a high-performance 'Regex Fortress' instead of heavy AI.
-    """
     try:
         image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         draw = ImageDraw.Draw(image)
@@ -55,39 +50,42 @@ def scrub_image_and_extract_text(img_bytes):
         # 1. OCR Stage
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
         
-        # 2. THE BULLETPROOF REGEX (The Fortress)
-        # This looks for: Emails, Phone numbers (intl & local), and long digit strings (CC/SSN)
+        # 2. THE BULLETPROOF REGEX
         pii_pattern = re.compile(
             r'('
-            r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|'           # Emails
-            r'(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4,}|'  # Phone Numbers (incl. International)
-            r'\b\d{3}-\d{2}-\d{4}\b|'                                    # SSNs (NEW!)
-            r'\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b|'            # Credit Cards (Formatted)
-            r'\b\d{13,19}\b'                                             # Long ID/Account numbers
+            r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|'           
+            r'(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{4,}|' 
+            r'\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b|'            
+            r'\b\d{13,19}\b'                                             
             r')',
             re.IGNORECASE
         )
 
-        scrubbed_words = []
+        # 3. Redaction Stage (Logic Fix: No double loops)
+        full_text = " ".join(data['text'])
+        scrubbed_words = list(data['text']) 
 
-        # 3. Redaction Stage
-        for i in range(len(data['text'])):
-            word = data['text'][i].strip()
-            if not word: 
-                continue
-                
-            if pii_pattern.search(word):
-                # We found something sensitive! 
-                # Grab the exact location of this word on the image
-                x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-                
-                # Draw a solid black rectangle over the text
-                draw.rectangle([x, y, x + w, y + h], fill="black")
-                scrubbed_words.append("[REDACTED]")
-            else:
-                scrubbed_words.append(word)
+        for match in pii_pattern.finditer(full_text):
+            start_char = match.start()
+            end_char = match.end()
 
-        # 4. Save the redacted image to base64
+            current_char_pos = 0
+            for i in range(len(data['text'])):
+                word = data['text'][i]
+                word_len = len(word)
+                
+                word_start = current_char_pos
+                word_end = current_char_pos + word_len
+                
+                if word_start < end_char and word_end > start_char:
+                    if word.strip(): 
+                        x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+                        draw.rectangle([x, y, x + w, y + h], fill="black")
+                        scrubbed_words[i] = "[REDACTED]"
+                
+                current_char_pos += word_len + 1 
+
+        # 4. Save base64
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG")
         redacted_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
@@ -96,8 +94,7 @@ def scrub_image_and_extract_text(img_bytes):
         
     except Exception as e:
         print(f"⚠️ Redaction Error: {e}")
-        # Fail safely - do not expose unredacted image to cloud
-        raise ValueError("PII redaction failed - cannot safely process image") from e
+        raise ValueError("PII redaction failed") from e
 
 # --- PWA MANIFEST ---
 @app.get("/manifest.json")
@@ -127,7 +124,6 @@ async def analyze(payload: dict, request: Request):
     if not b64:
         raise HTTPException(status_code=400, detail="Missing image data")
 
-    # Rate limiting logic
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     history = request_history.get(client_ip, [])
@@ -140,17 +136,13 @@ async def analyze(payload: dict, request: Request):
     try:
         img_bytes = base64.b64decode(b64)
 
-        # A. EXPLICIT IMAGE SIZE & MIME TYPE VALIDATION
         if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
 
         allowed_mimes = {"jpeg", "jpg", "png", "gif", "webp"}
         mime = payload.get("mime", "jpeg").lower()
         if mime not in allowed_mimes:
-            raise HTTPException(
-                status_code=415,
-                detail=f"Unsupported image format — allowed: {', '.join(sorted(allowed_mimes))}"
-            )
+            raise HTTPException(status_code=415, detail="Unsupported image format")
 
         # B. SCRUB AND READ TEXT
         safe_b64, extracted_text = scrub_image_and_extract_text(img_bytes)
@@ -177,7 +169,6 @@ async def analyze(payload: dict, request: Request):
         resp1.raise_for_status()
         raw_det = resp1.json()["choices"][0]["message"]["content"]
         
-        # --- ROBUST FIX FOR CALL 1 ---
         try:
             start_det = raw_det.find('{')
             end_det = raw_det.rfind('}') + 1
@@ -204,7 +195,6 @@ async def analyze(payload: dict, request: Request):
         resp2.raise_for_status()
         raw_emp = resp2.json()["choices"][0]["message"]["content"]
         
-        # --- ROBUST FIX FOR CALL 2 ---
         try:
             start_emp = raw_emp.find('{')
             end_emp = raw_emp.rfind('}') + 1
@@ -223,11 +213,13 @@ async def analyze(payload: dict, request: Request):
             "grandma_reply": empathy_data.get("grandma_reply", "Something went wrong. ❤️")
         }
 
+    except HTTPException:
+        # Pass through FastAPI exceptions (like rate limits)
+        raise
     except Exception as e:
-        # This is the "Safety Net" that prints to your terminal
         import traceback
         print(f"🚨 PIPELINE ERROR: {e}")
-        traceback.print_exc() # This will tell us the EXACT line that failed
+        traceback.print_exc() 
         return {
             "category": "caution",
             "scam_probability": 50,

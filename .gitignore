@@ -1,0 +1,26 @@
+# --- PRIVATE KEYS ---
+.env
+*.env
+
+# --- PYTHON STUFF ---
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# --- LOCAL TEST STUFF ---
+test_ocr.py
+test.png
+test_results/
+
+# --- OS STUFF ---
+.DS_Store
+Thumbs.db
+
+# --- Temporary/Random files ---
+index baru bagus.txt
+main baru bagus.txt
+prompt baru bagus.txt
+__pycache__/prompts.cpython-314.pyc
+__pycache__/not_my_nana_web.cpython-314.pyc

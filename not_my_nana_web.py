@@ -40,6 +40,8 @@ RATE_LIMIT_REQUESTS = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
 request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
 
+class ImageTooLargeError(ValueError):
+    pass
 # --- THE PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
     """Physically redacts sensitive text locally."""
@@ -49,7 +51,7 @@ def scrub_image_and_extract_text(img_bytes):
         
         # 2. Check for "Decompression Bombs" (Pixel check)
         if image.width * image.height > MAX_IMAGE_PIXELS:
-            raise ValueError("Image dimensions too large")
+            raise ImageTooLargeError("Image dimensions too large")
             
         # 3. Now convert to RGB
         image = image.convert("RGB")
@@ -112,9 +114,13 @@ def scrub_image_and_extract_text(img_bytes):
         
         return redacted_b64, " ".join(scrubbed_words)
         
+    except UnidentifiedImageError:
+        raise
+    except ImageTooLargeError:
+        raise
     except Exception as e:
         print(f"⚠️ Redaction Error: {e}")
-        raise ValueError(str(e)) from e
+        raise RuntimeError("PII redaction failed") from e
 
 # --- PWA MANIFEST ---
 @app.get("/manifest.json")
@@ -169,7 +175,7 @@ async def analyze(payload: dict, request: Request):
             safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
         except UnidentifiedImageError:
             raise HTTPException(status_code=415, detail="Corrupt or invalid image file") from None
-        except ValueError as e:
+        except ImageTooLargeError as e:
             raise HTTPException(status_code=413, detail=str(e)) from e
 
         ocr_context = extracted_text if extracted_text.strip() else "[No text detected]"
@@ -237,8 +243,13 @@ async def analyze(payload: dict, request: Request):
                 
             print(f"❤️ GRANDCHILD: {empathy_data}")
 
+        allowed_categories = {"scam", "ai_image", "sensitive", "viral", "safe"}
+        category = analysis_data.get("category")
+        if category not in allowed_categories:
+            category = "caution"
+
         return {
-            "category": analysis_data.get("category"),
+            "category": category,
             "is_ai": analysis_data.get("is_ai", False),
             "scam_probability": analysis_data.get("scam_probability", 0),
             "title": empathy_data.get("title", "Check Results"),

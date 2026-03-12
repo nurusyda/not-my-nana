@@ -19,3 +19,8 @@ venv/
 # IDEs
 .vscode/
 .idea/
+
+#Others
+node_modules/
+dist/
+build/

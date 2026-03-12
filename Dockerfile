@@ -31,4 +31,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # 9. Start the server using the PORT provided by Railway
-CMD ["sh", "-c", "uvicorn not_my_nana_web:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "exec uvicorn not_my_nana_web:app --host 0.0.0.0 --port ${PORT:-8000}"]

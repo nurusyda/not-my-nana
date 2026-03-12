@@ -362,9 +362,9 @@
                 let colorVar = 'var(--color-safe)';
                 if (item.type === 'scam') colorVar = 'var(--color-scam)';
                 else if (item.type === 'caution') colorVar = 'var(--color-caution)';
-                else if (item.type === 'ai-picture') colorVar = 'var(--text-ai)';
+                else if (item.type === 'ai-picture') colorVar = 'var(--border-ai)';
                 else if (item.type === 'sensitive') colorVar = 'var(--color-sensitive)';
-                else if (item.type === 'viral') colorVar = 'var(--border-viral)';
+                else if (item.type === 'viral') colorVar = 'var(--color-viral)';
 
                 const previewUrl = (item.id && sessionImages[item.id]) ? sessionImages[item.id] : '';
                 

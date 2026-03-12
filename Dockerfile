@@ -3,20 +3,27 @@ FROM python:3.12-slim
 
 # 2. Install Tesseract OCR and its dependencies
 RUN apt-get update && apt-get install -y \
+    --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Set the working directory
+# 3. Create non-root user
+RUN useradd --create-home --shell /bin/bash appuser
+
+# 4. Set the working directory
 WORKDIR /app
 
-# 4. Copy requirements first (for faster builds)
+# 5. Copy requirements first (for faster builds)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 5. Copy the rest of the project
+# 6. Copy the rest of the project
 COPY . .
 
-# 6. Start the server using the PORT provided by Railway
-CMD uvicorn not_my_nana_web:app --host 0.0.0.0 --port $PORT
+# 7. Switch to non-root user
+USER appuser
+
+# 8. Start the server using the PORT provided by Railway
+CMD ["sh", "-c", "uvicorn not_my_nana_web:app --host 0.0.0.0 --port ${PORT:-8000}"]

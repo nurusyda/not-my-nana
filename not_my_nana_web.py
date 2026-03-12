@@ -225,14 +225,14 @@ async def analyze(payload: dict, request: Request):
                 end_idx   = raw_det.rfind('}') + 1
 
                 if start_idx == -1 or end_idx <= start_idx:                    
-                    print(f"JSON not found in DEtective: {raw_det[:200]!r}")
+                    print("🕵️ JSON not found in Detective response")
                     raise ValueError("Detective missing JSON")
 
                 json_str = raw_det[start_idx:end_idx]
                 analysis_data = json.loads(json_str)
 
             except (json.JSONDecodeError, ValueError) as e:
-                print(f"JSON parse failed: {e} — raw: {raw_det[:300]!r}")
+                print(f"🕵️ JSON parse failed for Detective: {type(e).__name__}")
                 # Optional: return fallback result instead of crashing whole request
                 analysis_data = {
                     "category": "caution",
@@ -318,13 +318,13 @@ async def analyze(payload: dict, request: Request):
         import traceback
         print("🚨 PIPELINE ERROR")
         traceback.print_exc() 
-        return {
+        return JSONResponse(status_code=503, content={
             "category": "caution",
             "is_ai": False,
             "scam_probability": 50,
             "title": "🔌 Connection Error",
             "grandma_reply": "❤️ Nana, my brain is having trouble connecting. Please try again in a moment ❤️"
-        }
+        })
 
 if __name__ == "__main__":
     import uvicorn

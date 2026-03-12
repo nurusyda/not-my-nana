@@ -314,7 +314,7 @@
                 else if (item.type === 'sensitive') colorVar = 'var(--color-sensitive)';
                 else if (item.type === 'viral') colorVar = 'var(--color-viral)';
 
-                const previewUrl = item.image || '';
+                const previewUrl = (item.image && item.image.startsWith('data:image/')) ? item.image : '';
 
                 const previewAlt = item.reply 
                     ? `Preview of recent check: ${escapeHtml(item.reply.substring(0, 40))}${item.reply.length > 40 ? '...' : ''}`

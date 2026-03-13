@@ -317,10 +317,9 @@ async def analyze(payload: dict, request: Request):
     except Exception:
         logger.exception("Unexpected pipeline error")
         return JSONResponse(status_code=500, content=fallback_response)
-
+        
 if __name__ == "__main__":
     import uvicorn
-    # This force-reads the port as an integer directly from the OS
-    port = int(os.environ.get("PORT", 8000)) 
+    port = int(os.environ.get("PORT", 8000))
     logger.info(f"🚀 Not My Nana starting on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,13 +1,4 @@
-import os
-import re
-import io
-import json
-import base64
-import time
-import asyncio
-import random
-import httpx
-import binascii
+import os, re, io, json, base64, time, asyncio, random, httpx, logging, binascii, uuid
 from PIL import Image, ImageDraw, UnidentifiedImageError
 import pytesseract
 from fastapi import FastAPI, HTTPException, Request
@@ -18,6 +9,14 @@ from dotenv import load_dotenv
 from cachetools import TTLCache
 
 from prompts import STEP1_ANALYSIS_PROMPT, STEP2_EMPATHY_PROMPT
+
+# --- LOGGING SETUP ---
+# Standardizes logs for professional deployment environments like Railway/Heroku
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(name)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -31,14 +30,14 @@ if os.name == 'nt':
 NOVA_API_KEY = os.getenv("NOVA_API_KEY")
 
 if not NOVA_API_KEY:
-    print("❌ ERROR: NOVA_API_KEY is missing!")
+    logger.critical("❌ NOVA_API_KEY is missing from environment variables!")
     raise RuntimeError("NOVA_API_KEY environment variable is missing")
 
 app = FastAPI(title="Not My Nana ❤️")
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- THE SECURITY & RATE LIMITING CONSTANTS ---
+# --- SECURITY & PERFORMANCE CONSTANTS ---
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
 MAX_OCR_CONTEXT_CHARS = 4000
@@ -46,71 +45,57 @@ RATE_LIMIT_REQUESTS = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
 request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
 
-class ImageTooLargeError(ValueError):
-    pass
+class ImageTooLargeError(ValueError): pass
+
 # --- THE PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
-    """Physically redacts sensitive text locally — word by word."""
+    """Redacts PII by scanning the full text stream to catch multi-token spans like phone numbers."""
     try:
-        # 1. Open & basic safety
-        image = Image.open(io.BytesIO(img_bytes))
-        image.verify()  # quick corruption check
-        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")  # reopen after verify
-
+        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         if image.width * image.height > MAX_IMAGE_PIXELS:
             raise ImageTooLargeError("Image dimensions too large")
 
         draw = ImageDraw.Draw(image)
-
-        # 2. OCR
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+        
+        full_text = ""
+        char_to_word = []
+        for i, word in enumerate(data['text']):
+            for _ in word:
+                char_to_word.append(i)
+            full_text += word + " "
+            char_to_word.append(-1) # Placeholder for spaces
 
-        # 3. Only consider "real" words with decent confidence
-        confidences = data.get('conf', [100] * len(data['text'])) # Fallback to 100 if missing
-        text_indices = [
-            i for i in range(len(data['text']))
-            if data['text'][i].strip() and confidences[i] >= 60
-        ]
-
-        scrubbed_words = [data['text'][i] for i in text_indices]
-
-        # 4. Best regex we can reasonably use here (catches most real-world phones + emails)
         pii_pattern = re.compile(
-            r'('
-            r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|'               # emails
-            r'(\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})|'  # flexible phones
-            r'\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b|'                 # credit-card like
-            r'\b\d{13,19}\b'                                                  # long numbers
-            r')',
-            re.IGNORECASE | re.UNICODE
+            r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|' 
+            r'(\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})|' 
+            r'(\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b)',
+            re.IGNORECASE
         )
 
-        # 5. Redact word-by-word
-        for idx, word_idx in enumerate(text_indices):
-            word = data['text'][word_idx].strip()
-            if pii_pattern.search(word):
-                x = data['left'][word_idx]
-                y = data['top'][word_idx]
-                w = data['width'][word_idx]
-                h = data['height'][word_idx]
-                # Slightly larger box = less chance of leaking edges
-                draw.rectangle([x-5, y-5, x + w + 5, y + h + 5], fill="black")
-                scrubbed_words[idx] = "[REDACTED]"
+        scrubbed_words = list(data['text'])
+        for match in pii_pattern.finditer(full_text):
+            start, end = match.span()
+            affected_indices = set(char_to_word[start:end])
+            for idx in affected_indices:
+                if idx != -1:
+                    x, y, w, h = data['left'][idx], data['top'][idx], data['width'][idx], data['height'][idx]
+                    draw.rectangle([x-2, y-2, x+w+2, y+h+2], fill="black")
+                    scrubbed_words[idx] = "[REDACTED]"
 
-        # 6. Save redacted image
         buffered = io.BytesIO()
-        image.save(buffered, format="JPEG", quality=85)  # smaller size, good enough
-        redacted_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-        return redacted_b64, " ".join(scrubbed_words)
-
-    except (UnidentifiedImageError, OSError, ImageTooLargeError):
-        raise
+        image.save(buffered, format="JPEG", quality=85)
+        return base64.b64encode(buffered.getvalue()).decode("utf-8"), " ".join(scrubbed_words)
     except Exception as e:
-        print(f"⚠️ Redaction Error: {e}")
+        logger.error(f"PII Redaction Error: {e}")
         raise RuntimeError("PII redaction failed") from e
 
-# --- PWA MANIFEST ---
+# --- ROUTES ---
+@app.get("/health")
+async def health():
+    """Standard health check for container orchestration."""
+    return {"status": "healthy", "timestamp": time.time()}
+
 @app.get("/manifest.json")
 async def manifest():
     return JSONResponse({
@@ -133,72 +118,99 @@ async def home(request: Request):
 
 # --- ASYNC RETRY HELPER ---
 async def fetch_with_retries(client: httpx.AsyncClient, url: str, json_data: dict, headers: dict, timeout: float, max_retries: int = 3):
-    """Fetches from API with exponential backoff for transient network/5xx errors."""
+    """Hardened retry logic to split connection issues from billing risks."""
     for attempt in range(max_retries):
         try:
             resp = await client.post(url, json=json_data, headers=headers, timeout=timeout)
-            resp.raise_for_status()  # Raises for any 4xx/5xx
+            
+            if resp.status_code >= 500 and attempt < max_retries - 1:
+                sleep_time = 1 + random.random() * (2 ** attempt)
+                logger.warning(f"⚠️ Server Error {resp.status_code}. Retrying in {sleep_time:.2f}s...")
+                await asyncio.sleep(sleep_time)
+                continue
+            
+            resp.raise_for_status()
             return resp
-        except (httpx.RequestError, httpx.HTTPStatusError) as e:
-            # If it's a 4xx error (like 400 Bad Request or 401 Unauthorized), do NOT retry.            
-            if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500:
-                raise
-            
+
+        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
             if attempt == max_retries - 1:
-                raise # Out of retries, fail completely
-            
-            # Exponential backoff with jitter (e.g., ~1.2s, ~2.5s)
-            sleep_time = (2 ** attempt) + random.uniform(0, 1)
-            print(f"⚠️ API Network Error ({e}). Retrying in {sleep_time:.2f}s... (Attempt {attempt + 1}/{max_retries})")
+                logger.error(f"API unreachable after {max_retries} attempts: {e}")
+                raise
+            sleep_time = 1 + random.random() * (2 ** attempt)
+            logger.warning(f"📡 Connection failed ({type(e).__name__}). Retrying in {sleep_time:.2f}s...")
             await asyncio.sleep(sleep_time)
 
-# --- THE ANALYZE ENDPOINT ---
+        except (httpx.ReadTimeout, httpx.WriteTimeout) as e:
+            logger.error(f"🚫 Timeout after request sent ({type(e).__name__}). Failing fast to avoid double-billing.")
+            raise
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"❌ Client Error ({e.response.status_code}). No retry.")
+            raise
+            
+        except Exception as e:
+            logger.exception(f"🚨 Unexpected retry error: {type(e).__name__}")
+            raise
+
+# --- CORE PIPELINE ---
 @app.post("/analyze")
 async def analyze(payload: dict, request: Request):
     b64 = payload.get("base64")
     if not b64:
         raise HTTPException(status_code=400, detail="Missing image data")
 
-    # Rate Limiting
+    # Rate Limiting Logic
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     history = request_history.get(client_ip, [])
     history = [t for t in history if now - t < RATE_LIMIT_WINDOW_SECONDS]
+    
     if len(history) >= RATE_LIMIT_REQUESTS:
-        raise HTTPException(status_code=429, detail="Too many requests")
+        logger.warning(f"Rate limit hit for {client_ip}")
+        return JSONResponse(status_code=429, content={
+            "title": "☕ Time for a Tea Break?",
+            "grandma_reply": "❤️ Nana, I've been thinking a lot lately! Let's take a tiny break for a minute and then we can check more pictures together. ❤️"
+        })
+    
     history.append(now)
     request_history[client_ip] = history
 
+    # Friendly fallback for frontend to display during failures
+    fallback_response = {
+        "category": "caution",
+        "title": "🔌 Connection Error",
+        "grandma_reply": "❤️ Nana, my brain is having trouble connecting. Please try again in a moment! ❤️"
+    }
+
     try:
-        # 1. Strict Base64 Check
+        # 1. Validation & OCR
         try:
             img_bytes = base64.b64decode(b64, validate=True)
         except (binascii.Error, ValueError):
-            raise HTTPException(status_code=400, detail="Invalid base64 image data") from None
+            raise HTTPException(status_code=400, detail="Invalid base64 image data")
 
         if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
 
-        # 2. Offload OCR to a thread so it doesn't freeze the app
-        try:
-            safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
-        except (UnidentifiedImageError, OSError):
-            raise HTTPException(status_code=415, detail="Corrupt or invalid image file") from None
-        except ImageTooLargeError as e:
-            raise HTTPException(status_code=413, detail=str(e)) from e
+        safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
 
         ocr_context = extracted_text.strip() or "[No text detected]"
         if len(ocr_context) > MAX_OCR_CONTEXT_CHARS:
             ocr_context = ocr_context[:MAX_OCR_CONTEXT_CHARS] + " …[truncated]"
 
-        # 3. Use Async HTTP for AI calls
+        # 2. AI Detective & Empathy Pipeline
+        idempotency_key = str(uuid.uuid4())
         async with httpx.AsyncClient() as client:
-            headers = {"Authorization": f"Bearer {NOVA_API_KEY}", "Content-Type": "application/json"}
-            
-            # --- CALL 1: THE DETECTIVE ---
+            headers = {
+                "Authorization": f"Bearer {NOVA_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            if os.getenv("USE_IDEMPOTENCY", "true").lower() == "true":
+                headers["X-Idempotency-Key"] = idempotency_key
+
+            # Call 1: Technical Analysis (Detective)
             resp1 = await fetch_with_retries(
-                client,
-                "https://api.nova.amazon.com/v1/chat/completions",
+                client, "https://api.nova.amazon.com/v1/chat/completions",
                 json_data={
                     "model": "nova-2-lite-v1",
                     "messages": [
@@ -211,46 +223,15 @@ async def analyze(payload: dict, request: Request):
                     "temperature": 0.0
                 },
                 headers=headers, timeout=25.0
-            )            
-            resp1_data = resp1.json()
-            try:
-                raw_det = resp1_data["choices"][0]["message"]["content"]
-            except (KeyError, IndexError) as e:
-                print("🕵️ Unexpected detective response structure")
-                raise ValueError("Detective API returned unexpected response format") from e
+            )
             
-            # Robust JSON Parsing for Detective
-            try:                
-                start_idx = raw_det.find('{')
-                end_idx   = raw_det.rfind('}') + 1
+            raw_det = resp1.json()["choices"][0]["message"]["content"]
+            s1, e1 = raw_det.find('{'), raw_det.rfind('}') + 1
+            analysis_data = json.loads(raw_det[s1:e1])
 
-                if start_idx == -1 or end_idx <= start_idx:                    
-                    print("🕵️ JSON not found in Detective response")
-                    raise ValueError("Detective missing JSON")
-
-                json_str = raw_det[start_idx:end_idx]
-                analysis_data = json.loads(json_str)
-
-            except (json.JSONDecodeError, ValueError) as e:
-                print(f"🕵️ JSON parse failed for Detective: {type(e).__name__}")
-                # Optional: return fallback result instead of crashing whole request
-                analysis_data = {
-                    "category": "caution",
-                    "is_ai": False,
-                    "ai_score": 0,
-                    "scam_probability": 60,
-                    "dominant_language": "en",
-                    "technical_findings": ["Could not understand AI answer"],
-                    "title": "🤔 Hmm...",
-                    "grandma_reply": "❤️ Nana, I got confused by the answer. Try again in a minute? ❤️"
-                }
-                
-            print("🕵️ Detective analysis parsed")
-
-            # --- CALL 2: THE GRANDCHILD ---
+            # Call 2: Friendly Translation (Grandchild)
             resp2 = await fetch_with_retries(
-                client,
-                "https://api.nova.amazon.com/v1/chat/completions",
+                client, "https://api.nova.amazon.com/v1/chat/completions",
                 json_data={
                     "model": "nova-2-lite-v1",
                     "messages": [
@@ -260,74 +241,35 @@ async def analyze(payload: dict, request: Request):
                     "temperature": 0.0
                 },
                 headers=headers, timeout=30.0
-            )            
-            resp2_data = resp2.json()
-            try:
-                raw_emp = resp2_data["choices"][0]["message"]["content"]
-            except (KeyError, IndexError) as e:
-                print("❤️ Unexpected grandchild response structure")
-                raise ValueError("Grandchild API returned unexpected response format") from e
+            )
             
-            # Robust JSON Parsing for Grandchild
-            try:                
-                start_idx = raw_emp.find('{')
-                end_idx   = raw_emp.rfind('}') + 1
-
-                if start_idx == -1 or end_idx <= start_idx:                    
-                    print("❤️ JSON not found in Grandchild response")
-                    raise ValueError("Grandchild missing JSON")
-
-                json_str = raw_emp[start_idx:end_idx]
-                empathy_data = json.loads(json_str)
-
-            except (json.JSONDecodeError, ValueError) as e:
-                print(f"❤️ JSON parse failed for Grandchild: {type(e).__name__}")
-                # Optional: return fallback result instead of crashing whole request
-                empathy_data = {
-                    "category": "caution",
-                    "is_ai": False,
-                    "ai_score": 0,
-                    "scam_probability": 60,
-                    "dominant_language": "en",
-                    "technical_findings": ["Could not understand AI answer"],
-                    "title": "🤔 Hmm...",
-                    "grandma_reply": "❤️ Nana, I got confused by the answer. Try again in a minute? ❤️"
-                }    
-            print("❤️ Grandchild response parsed")
-
-        allowed_categories = {"scam", "ai_image", "sensitive", "viral", "safe"}
-        category = analysis_data.get("category")
-        if category not in allowed_categories:
-            category = "caution"
+            raw_emp = resp2.json()["choices"][0]["message"]["content"]
+            s2, e2 = raw_emp.find('{'), raw_emp.rfind('}') + 1
+            empathy_data = json.loads(raw_emp[s2:e2])
 
         return {
-            "category": category,
+            "category": analysis_data.get("category", "caution"),
             "is_ai": analysis_data.get("is_ai", False),
-            "ai_score": analysis_data.get("ai_score", 0),
             "scam_probability": analysis_data.get("scam_probability", 0),
-            "dominant_language": analysis_data.get("dominant_language", "en"),
-            "technical_findings": analysis_data.get("technical_findings", []),
             "title": empathy_data.get("title", "Check Results"),
             "grandma_reply": empathy_data.get("grandma_reply", "Something went wrong. ❤️")
         }
 
-    except HTTPException:
-        # Pass through FastAPI exceptions (like rate limits and file size errors)
-        raise
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error {e.response.status_code}: {e}")
+        return JSONResponse(status_code=e.response.status_code, content=fallback_response)
+    except httpx.RequestError as e:
+        logger.error(f"Network request failed: {e}")
+        return JSONResponse(status_code=503, content=fallback_response)
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode failed in pipeline: {e}")
+        return JSONResponse(status_code=500, content=fallback_response)
     except Exception:
-        import traceback
-        print("🚨 PIPELINE ERROR")
-        traceback.print_exc() 
-        return JSONResponse(status_code=503, content={
-            "category": "caution",
-            "is_ai": False,
-            "scam_probability": 50,
-            "title": "🔌 Connection Error",
-            "grandma_reply": "❤️ Nana, my brain is having trouble connecting. Please try again in a moment ❤️"
-        })
+        logger.exception("Unexpected pipeline error")
+        return JSONResponse(status_code=500, content=fallback_response)
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    print("🚀 Not My Nana — Protected Multi-Step Mode (Async Edition)")
+    logger.info(f"🚀 Not My Nana starting on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

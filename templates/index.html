@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Not My Nana ❤️</title>
     
     <link rel="manifest" href="/manifest.json">
@@ -217,9 +217,8 @@
 
         function escapeHtml(text) {
             if (!text) return "";
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
         function getResultType(data) {
@@ -296,8 +295,14 @@
                 localStorage.setItem('nanaHistory', JSON.stringify(history));
             } catch (e) {
                 console.warn('Storage full, saving without image');
-                if (history.length > 0) history[0].image = '';
-                localStorage.setItem('nanaHistory', JSON.stringify(history));
+                if (history.length > 0) {
+                    history[0].image = '';  // clear image only
+                    try {
+                        localStorage.setItem('nanaHistory', JSON.stringify(history));
+                    } catch (nestedErr) {
+                        console.warn('Even fallback storage failed — skipping persistence');
+                    }
+                }
             }
             renderHistory();
         }
@@ -320,11 +325,18 @@
                     ? `Preview of recent check: ${escapeHtml(item.reply.substring(0, 40))}${item.reply.length > 40 ? '...' : ''}`
                     : "Recent scan preview (no description available)";
 
+                const safeAlt = previewAlt
+                    .replace(/&/g, '&amp;') 
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+
                 return `
                 <div class="history-item">
                     <small>${item.time}</small><br>
                     ${previewUrl 
-                        ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="${previewAlt}">` 
+                        ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="${safeAlt}">` 
                         : '<div class="history-placeholder">No preview saved</div>'
                     }
                     <span style="color: ${colorVar}">${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}</span>
@@ -356,31 +368,19 @@
                     const fullB64 = e.target.result.split(',')[1];
                     const mime = file.type.split('/')[1] || 'jpeg';
 
-                    // Create small 200px thumbnail for persistent history preview (much smaller than full image)
+                    // Thumbnail logic
                     let thumbB64 = '';
                     try {
                         const img = new Image();
                         img.src = e.target.result;
                         await img.decode();
-
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-
                         const targetWidth = 200;
                         let targetHeight = (img.height / img.width) * targetWidth;
-
-                        const maxHeight = 300; // safety cap — prevents super tall/thin previews
-                        if (targetHeight > maxHeight) {
-                            targetHeight = maxHeight;
-                            canvas.width = (img.width / img.height) * maxHeight;
-                            canvas.height = maxHeight;
-                        } else {
-                            canvas.width = targetWidth;
-                            canvas.height = targetHeight;
-                        }
-
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
                         thumbB64 = canvas.toDataURL('image/jpeg', 0.6);
                     } catch (thumbErr) {
                         console.warn("Thumbnail creation failed:", thumbErr);
@@ -389,14 +389,29 @@
                     document.getElementById('loading').style.display = 'block';
                     document.getElementById('result').innerHTML = '';
 
+                    // HARDENED FETCH LOGIC
                     const res = await fetch('/analyze', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({base64: fullB64, mime: mime})
                     });
 
-                    if (!res.ok) throw new Error(`Server error: ${res.status}`);
                     const data = await res.json();
+
+                    if (!res.ok) {
+                        // Use friendly message from backend
+                        const errorMsg = data.grandma_reply || "Something went wrong, Nana. Let's try again? ❤️";
+                        const errorTitle = data.title || "🤔 Hmm...";
+                        
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('result').innerHTML = `
+                            <div class="result error">
+                                <span class="result-title">${escapeHtml(errorTitle)}</span>
+                                <span class="result-text">${escapeHtml(errorMsg)}</span>
+                            </div>`;
+                        return;
+                    }
+
                     document.getElementById('loading').style.display = 'none';
 
                     const className = getResultType(data);
@@ -427,16 +442,17 @@
             const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
             document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
             document.getElementById('theme-toggle').innerText = isDark ? '☀️' : '🌙';
-            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to dark theme' : 'Switch to light theme')
+            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
         }
 
         function toggleTheme() {
             const root = document.documentElement;
-            const isDark = root.getAttribute('data-theme') === 'dark';
-            root.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            localStorage.setItem('nanaTheme', isDark ? 'light' : 'dark');
-            document.getElementById('theme-toggle').innerText = isDark ? '🌙' : '☀️';
-            document.getElementById('theme-toggle').setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+            const isCurrentlyDark = root.getAttribute('data-theme') === 'dark';
+            const newTheme = isCurrentlyDark ? 'light' : 'dark';
+            root.setAttribute('data-theme', newTheme);
+            localStorage.setItem('nanaTheme', newTheme);
+            document.getElementById('theme-toggle').innerText = isCurrentlyDark ? '🌙' : '☀️';
+            document.getElementById('theme-toggle').setAttribute('aria-label', isCurrentlyDark ? 'Switch to dark theme' : 'Switch to light theme');
         }
 
         window.onload = function() {

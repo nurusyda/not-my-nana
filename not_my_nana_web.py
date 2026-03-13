@@ -55,22 +55,27 @@ RATE_LIMIT_REQUESTS = 15
 RATE_LIMIT_WINDOW_SECONDS = 60
 request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
 
-class ImageTooLargeError(ValueError): pass
+class ImageTooLargeError(ValueError):
+    pass
 
 # --- PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
     """Redacts PII by scanning the full text stream to catch multi-token spans."""
-    image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    if image.width * image.height > MAX_IMAGE_PIXELS:
-        raise ImageTooLargeError("Image dimensions too large")
-    
+
     try:
+        image = Image.open(io.BytesIO(img_bytes))
+        if image.width * image.height > MAX_IMAGE_PIXELS:
+            raise ImageTooLargeError("Image dimensions too large")
+        image = image.convert("RGB")
+
         draw = ImageDraw.Draw(image)
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
         
         full_text = ""
         char_to_word = []
-        for i, word in enumerate(data['text']):
+        valid_indices = [i for i, word in enumerate(data["text"]) if word and word.strip()]
+        for i in valid_indices:
+            word = data["text"][i]
             for _ in word:
                 char_to_word.append(i)
             full_text += word + " "
@@ -205,7 +210,12 @@ async def analyze(payload: dict, request: Request):
         if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
 
-        safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
+        try:
+            safe_b64, extracted_text = await asyncio.to_thread(scrub_image_and_extract_text, img_bytes)
+        except ImageTooLargeError as e:
+            raise HTTPException(status_code=413, detail=str(e)) from e
+        except UnidentifiedImageError as e:
+            raise HTTPException(status_code=415, detail="Unsupported or corrupt image") from e
 
         ocr_context = extracted_text.strip() or "[No text detected]"
         if len(ocr_context) > MAX_OCR_CONTEXT_CHARS:
@@ -293,6 +303,8 @@ async def analyze(payload: dict, request: Request):
             "grandma_reply": empathy_data.get("grandma_reply", "Something went wrong. ❤️")
         }
 
+    except HTTPException:
+        raise
     except httpx.HTTPStatusError as e:
         logger.error(f"HTTP error {e.response.status_code}: {e}")
         return JSONResponse(status_code=e.response.status_code, content=fallback_response)

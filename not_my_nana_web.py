@@ -87,9 +87,9 @@ def scrub_image_and_extract_text(img_bytes):
             char_to_word.append(-1)  # Space mapping
 
         pii_pattern = re.compile(
-            r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|' 
-            r'(\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})|' 
-            r'(\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b)',
+            r'(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|'
+            r'(?P<credit_card>\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b)|'
+            r'(?P<phone>\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})',
             re.IGNORECASE
         )
 
@@ -97,6 +97,7 @@ def scrub_image_and_extract_text(img_bytes):
         redaction_count = 0
         redacted_types = set()
         match_count = 0
+        redacted_indices = set()
 
         # 3. Process matches
         for match in pii_pattern.finditer(full_text):
@@ -104,20 +105,25 @@ def scrub_image_and_extract_text(img_bytes):
             start, end = match.span()
 
             # Classify type via capture groups
-            email, phone, card = match.groups()
-            if email: redacted_types.add("email")
-            elif phone: redacted_types.add("phone")
-            elif card: redacted_types.add("credit_card")
+            if match.group("email"):
+                redacted_types.add("email")
+            elif match.group("credit_card"):
+                redacted_types.add("credit_card")
+            elif match.group("phone"):
+                redacted_types.add("phone")
 
             # Identify which OCR boxes correspond to this text span
             affected_indices = {idx for idx in char_to_word[start:end] if idx != -1}
             for idx in affected_indices:
+                if idx in redacted_indices:
+                    continue  # Already redacted by another match
                 x, y, w, h = data['left'][idx], data['top'][idx], data['width'][idx], data['height'][idx]
                 
                 # Draw black rectangle with 2px safety padding
                 draw.rectangle([x-2, y-2, x+w+2, y+h+2], fill="black")
                 scrubbed_words[idx] = "[REDACTED]"
                 redaction_count += 1
+                redacted_indices.add(idx)
 
         # 4. Final logging
         if redaction_count > 0:

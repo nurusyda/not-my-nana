@@ -297,7 +297,6 @@ async def analyze(payload: dict, request: Request):
         return {
             "category": category,
             "is_ai": analysis_data.get("is_ai", False),
-            "scam_probability": analysis_data.get("scam_probability", 0),
             "dominant_language": analysis_data.get("dominant_language", "en"),
             "title": empathy_data.get("title", "Check Results"),
             "grandma_reply": empathy_data.get("grandma_reply", "Something went wrong. ❤️")

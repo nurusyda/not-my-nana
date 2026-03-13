@@ -1,4 +1,15 @@
-import os, re, io, json, base64, time, asyncio, random, httpx, logging, binascii, uuid
+import os
+import re
+import io
+import json
+import base64
+import time
+import asyncio
+import random
+import httpx
+import logging
+import binascii
+import uuid
 from PIL import Image, ImageDraw, UnidentifiedImageError
 import pytesseract
 from fastapi import FastAPI, HTTPException, Request
@@ -11,12 +22,12 @@ from cachetools import TTLCache
 from prompts import STEP1_ANALYSIS_PROMPT, STEP2_EMPATHY_PROMPT
 
 # --- LOGGING SETUP ---
-# Standardizes logs for professional deployment environments like Railway/Heroku
 logging.basicConfig(
     level=logging.INFO,
-    format="%(levelname)s: %(name)s - %(message)s"
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("NotMyNana")
 
 load_dotenv()
 
@@ -28,7 +39,6 @@ if os.name == 'nt':
     )
 
 NOVA_API_KEY = os.getenv("NOVA_API_KEY")
-
 if not NOVA_API_KEY:
     logger.critical("❌ NOVA_API_KEY is missing from environment variables!")
     raise RuntimeError("NOVA_API_KEY environment variable is missing")
@@ -37,7 +47,7 @@ app = FastAPI(title="Not My Nana ❤️")
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- SECURITY & PERFORMANCE CONSTANTS ---
+# --- CONSTANTS ---
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
 MAX_OCR_CONTEXT_CHARS = 4000
@@ -47,9 +57,9 @@ request_history = TTLCache(maxsize=1024, ttl=RATE_LIMIT_WINDOW_SECONDS)
 
 class ImageTooLargeError(ValueError): pass
 
-# --- THE PII SCRUBBER & OCR ---
+# --- PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
-    """Redacts PII by scanning the full text stream to catch multi-token spans like phone numbers."""
+    """Redacts PII by scanning the full text stream to catch multi-token spans."""
     try:
         image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         if image.width * image.height > MAX_IMAGE_PIXELS:
@@ -64,7 +74,7 @@ def scrub_image_and_extract_text(img_bytes):
             for _ in word:
                 char_to_word.append(i)
             full_text += word + " "
-            char_to_word.append(-1) # Placeholder for spaces
+            char_to_word.append(-1)  # space
 
         pii_pattern = re.compile(
             r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|' 
@@ -175,7 +185,6 @@ async def analyze(payload: dict, request: Request):
     history.append(now)
     request_history[client_ip] = history
 
-    # Friendly fallback for frontend to display during failures
     fallback_response = {
         "category": "caution",
         "title": "🔌 Connection Error",
@@ -186,8 +195,8 @@ async def analyze(payload: dict, request: Request):
         # 1. Validation & OCR
         try:
             img_bytes = base64.b64decode(b64, validate=True)
-        except (binascii.Error, ValueError):
-            raise HTTPException(status_code=400, detail="Invalid base64 image data")
+        except (binascii.Error, ValueError) as err:
+            raise HTTPException(status_code=400, detail="Invalid base64 image data") from err
 
         if len(img_bytes) > MAX_IMAGE_SIZE_BYTES:
             raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
@@ -222,11 +231,20 @@ async def analyze(payload: dict, request: Request):
                     ],
                     "temperature": 0.0
                 },
-                headers=headers, timeout=25.0
+                headers=headers,
+                timeout=25.0
             )
             
-            raw_det = resp1.json()["choices"][0]["message"]["content"]
+            resp1_data = resp1.json()
+            choices = resp1_data.get("choices", [])
+            if not choices or "message" not in choices[0] or "content" not in choices[0]["message"]:
+                logger.error("Unexpected API response structure from Detective")
+                raise ValueError("Detective API returned unexpected response format")
+            raw_det = choices[0]["message"]["content"]
             s1, e1 = raw_det.find('{'), raw_det.rfind('}') + 1
+            if s1 == -1 or e1 <= s1:
+                logger.error("No JSON object found in Detective response")
+                raise ValueError("Detective response was not valid JSON")
             analysis_data = json.loads(raw_det[s1:e1])
 
             # Call 2: Friendly Translation (Grandchild)
@@ -240,15 +258,30 @@ async def analyze(payload: dict, request: Request):
                     ],
                     "temperature": 0.0
                 },
-                headers=headers, timeout=30.0
+                headers=headers,
+                timeout=30.0
             )
             
-            raw_emp = resp2.json()["choices"][0]["message"]["content"]
+            resp2_data = resp2.json()
+            choices = resp2_data.get("choices", [])
+            if not choices or "message" not in choices[0] or "content" not in choices[0]["message"]:
+                logger.error("Unexpected API response structure from Grandchild")
+                raise ValueError("Grandchild API returned unexpected response format")
+            raw_emp = choices[0]["message"]["content"]
             s2, e2 = raw_emp.find('{'), raw_emp.rfind('}') + 1
+            if s2 == -1 or e2 <= s2:
+                logger.error("No JSON object found in Grandchild response")
+                raise ValueError("Grandchild response was not valid JSON")
             empathy_data = json.loads(raw_emp[s2:e2])
 
+        ALLOWED_CATEGORIES = {"scam", "ai_image", "sensitive", "viral", "safe", "caution"}
+        category = analysis_data.get("category", "caution")
+        if category not in ALLOWED_CATEGORIES:
+            logger.warning(f"Unknown category from AI: {category}")
+            category = "caution"
+
         return {
-            "category": analysis_data.get("category", "caution"),
+            "category": category,
             "is_ai": analysis_data.get("is_ai", False),
             "scam_probability": analysis_data.get("scam_probability", 0),
             "title": empathy_data.get("title", "Check Results"),

@@ -135,8 +135,13 @@
         .history-item small { font-size: 13px; color: var(--text-muted); opacity: 0.85; }
         :root[data-theme="dark"] .history-item small { color: #aaa; }
         
-        .history-item img { display: block; max-width: 100%; border-radius: 8px; margin: 8px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        :root[data-theme="dark"] .history-item img { box-shadow: 0 2px 8px rgba(0,0,0,0.4); filter: brightness(1.05); }
+        .history-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 8px 0;
+            display: block;
+        }
+        :root[data-theme="dark"] .history-preview { filter: brightness(1.05); }
 
         .history-placeholder {
             height: 100px; background: var(--surface-alt); border-radius: 8px; margin: 8px 0;
@@ -221,6 +226,15 @@
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
+        function escapeAttr(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         function getResultType(data) {
             if (data.category) {
                 if (data.category === 'ai_image') return 'ai-picture';
@@ -265,7 +279,7 @@
             document.getElementById('result').innerHTML = `
                 <div class="result ${className}">
                     <span class="result-title">${escapeHtml(data.title)}</span>
-                    <span class="result-text">${escapeHtml(data.grandma_reply)}</span>
+                    <span class="result-text" lang="en">${escapeHtml(data.grandma_reply)}</span>
                 </div>
             `;
             saveToHistory(data);
@@ -286,7 +300,8 @@
                 reply: data.grandma_reply,
                 type: getResultType(data),
                 image: thumbB64,
-                confidence: Number(data.scam_probability) || 0
+                confidence: Number(data.scam_probability) || 0,
+                lang: data.dominant_language || "en",
             });
 
             if (history.length > 3) history.pop();
@@ -321,25 +336,24 @@
 
                 const previewUrl = (item.image && item.image.startsWith('data:image/')) ? item.image : '';
 
-                const previewAlt = item.reply 
-                    ? `Preview of recent check: ${escapeHtml(item.reply.substring(0, 40))}${item.reply.length > 40 ? '...' : ''}`
-                    : "Recent scan preview (no description available)";
-
-                const safeAlt = previewAlt
-                    .replace(/&/g, '&amp;') 
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+                // Keep the raw string for logic
+                const rawReply = item.reply || "Recent scan preview";
+                const displayReply = rawReply.substring(0, 40) + (rawReply.length > 40 ? '...' : '');
+                
+                // --- NEW: Retrieve the saved language ---
+                const itemLang = item.lang || "en";
+                
+                // Escape once for the attribute
+                const safeAlt = escapeAttr(`Preview of recent check: ${displayReply}`);
 
                 return `
                 <div class="history-item">
                     <small>${item.time}</small><br>
                     ${previewUrl 
-                        ? `<img src="${previewUrl}" loading="lazy" style="max-width:100%; border-radius:8px; margin:8px 0; display:block;" alt="${safeAlt}">` 
-                        : '<div class="history-placeholder">No preview saved</div>'
+                        ? `<img src="${previewUrl}" loading="lazy" class="history-preview" alt="${safeAlt}">` 
+                        : '<div class="history-placeholder" role="img" aria-label="No preview saved">No preview saved</div>'
                     }
-                    <span style="color: ${colorVar}">${escapeHtml(item.reply.substring(0, 60))}${item.reply.length > 60 ? '...' : ''}</span>
+                    <span style="color: ${colorVar}" lang="${itemLang}">${escapeHtml(rawReply.substring(0, 60))}${rawReply.length > 60 ? '...' : ''}</span>
                 </div>
                 `;
             }).join('');
@@ -368,7 +382,6 @@
                     const fullB64 = e.target.result.split(',')[1];
                     const mime = file.type.split('/')[1] || 'jpeg';
 
-                    // Thumbnail logic
                     let thumbB64 = '';
                     try {
                         const img = new Image();
@@ -389,7 +402,6 @@
                     document.getElementById('loading').style.display = 'block';
                     document.getElementById('result').innerHTML = '';
 
-                    // HARDENED FETCH LOGIC
                     const res = await fetch('/analyze', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -399,7 +411,6 @@
                     const data = await res.json();
 
                     if (!res.ok) {
-                        // Use friendly message from backend
                         const errorMsg = data.grandma_reply || "Something went wrong, Nana. Let's try again? ❤️";
                         const errorTitle = data.title || "🤔 Hmm...";
                         
@@ -415,10 +426,12 @@
                     document.getElementById('loading').style.display = 'none';
 
                     const className = getResultType(data);
+                    const lang = data.dominant_language || "en"; // Get detected lang or default to en
+
                     document.getElementById('result').innerHTML = `
                         <div class="result ${className}">
                             <span class="result-title">${escapeHtml(data.title)}</span> 
-                            <span class="result-text">${escapeHtml(data.grandma_reply)}</span>
+                            <span class="result-text" lang="${lang}">${escapeHtml(data.grandma_reply)}</span>
                         </div>
                     `;
                     saveToHistory(data, thumbB64);

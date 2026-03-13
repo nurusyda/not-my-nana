@@ -348,7 +348,7 @@ async def analyze(payload: dict, request: Request):
     except Exception:
         logger.exception("Unexpected pipeline error")
         return JSONResponse(status_code=500, content=fallback_response)
-
+        
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))

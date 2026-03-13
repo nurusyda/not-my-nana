@@ -1,0 +1,26 @@
+# Security
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+#Others
+node_modules/
+dist/
+build/

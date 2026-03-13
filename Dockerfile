@@ -18,4 +18,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["python", "not_my_nana_web.py"]
+CMD ["sh", "-c", "exec uvicorn not_my_nana_web:app --host 0.0.0.0 --port ${PORT:-8000}"]

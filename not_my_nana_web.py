@@ -61,49 +61,87 @@ class ImageTooLargeError(ValueError):
 # --- PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
     """Redacts PII by scanning the full text stream to catch multi-token spans."""
-
     try:
         image = Image.open(io.BytesIO(img_bytes))
         if image.width * image.height > MAX_IMAGE_PIXELS:
             raise ImageTooLargeError("Image dimensions too large")
+        
         image = image.convert("RGB")
-
         draw = ImageDraw.Draw(image)
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-        
+
+        # 1. Gather stats and valid indices
+        valid_indices = [i for i, word in enumerate(data["text"]) if word and word.strip()]
+        ocr_word_count = len(valid_indices)
+        conf_values = [float(c) for c in data['conf'] if float(c) >= 0]
+        avg_conf = sum(conf_values) / len(conf_values) if conf_values else 0.0
+
+        # 2. Build searchable text and character-to-box mapping
         full_text = ""
         char_to_word = []
-        valid_indices = [i for i, word in enumerate(data["text"]) if word and word.strip()]
         for i in valid_indices:
             word = data["text"][i]
             for _ in word:
                 char_to_word.append(i)
             full_text += word + " "
-            char_to_word.append(-1)  # space
+            char_to_word.append(-1)  # Space mapping
 
         pii_pattern = re.compile(
-            r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|' 
-            r'(\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})|' 
-            r'(\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b)',
+            r'(?P<email>[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|'
+            r'(?P<credit_card>\b\d{4}[-.\s]?\d{4}[-.\s]?\d{4}[-.\s]?\d{4}\b)|'
+            r'(?P<phone>\+?\d{1,3}[-.\s()]*\d{1,4}[-.\s()]*\d{3,4}[-.\s()]*\d{4,})',
             re.IGNORECASE
         )
 
         scrubbed_words = list(data['text'])
+        redaction_count = 0
+        redacted_types = set()
+        match_count = 0
+        redacted_indices = set()
+
+        # 3. Process matches
         for match in pii_pattern.finditer(full_text):
+            match_count += 1
             start, end = match.span()
-            affected_indices = set(char_to_word[start:end])
+
+            # Classify type via capture groups
+            if match.group("email"):
+                redacted_types.add("email")
+            elif match.group("credit_card"):
+                redacted_types.add("credit_card")
+            elif match.group("phone"):
+                redacted_types.add("phone")
+
+            # Identify which OCR boxes correspond to this text span
+            affected_indices = {idx for idx in char_to_word[start:end] if idx != -1}
             for idx in affected_indices:
-                if idx != -1:
-                    x, y, w, h = data['left'][idx], data['top'][idx], data['width'][idx], data['height'][idx]
-                    draw.rectangle([x-2, y-2, x+w+2, y+h+2], fill="black")
-                    scrubbed_words[idx] = "[REDACTED]"
+                if idx in redacted_indices:
+                    continue  # Already redacted by another match
+                x, y, w, h = data['left'][idx], data['top'][idx], data['width'][idx], data['height'][idx]
+                
+                # Draw black rectangle with 2px safety padding
+                draw.rectangle([x-2, y-2, x+w+2, y+h+2], fill="black")
+                scrubbed_words[idx] = "[REDACTED]"
+                redaction_count += 1
+                redacted_indices.add(idx)
+
+        # 4. Final logging
+        if redaction_count > 0:
+            logger.info(
+                "PII Redacted: %d pattern matches (%d boxes) | Types: %s",
+                match_count, redaction_count, ", ".join(sorted(redacted_types))
+            )
+        else:
+            logger.debug(
+                "No PII detected | OCR words: %d | Avg Conf: %.1f%%",
+                ocr_word_count, avg_conf
+            )
 
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG", quality=85)
         return base64.b64encode(buffered.getvalue()).decode("utf-8"), " ".join(scrubbed_words)
-    except UnidentifiedImageError:
-        raise
-    except ImageTooLargeError:
+
+    except (UnidentifiedImageError, ImageTooLargeError):
         raise
     except Exception as e:
         logger.error(f"PII Redaction Error: {e}")

@@ -320,6 +320,7 @@ async def analyze(payload: dict, request: Request):
         
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))
+    # This force-reads the port as an integer directly from the OS
+    port = int(os.environ.get("PORT", 8000)) 
     logger.info(f"🚀 Not My Nana starting on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

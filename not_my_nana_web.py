@@ -60,11 +60,11 @@ class ImageTooLargeError(ValueError): pass
 # --- PII SCRUBBER & OCR ---
 def scrub_image_and_extract_text(img_bytes):
     """Redacts PII by scanning the full text stream to catch multi-token spans."""
+    image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+    if image.width * image.height > MAX_IMAGE_PIXELS:
+        raise ImageTooLargeError("Image dimensions too large")
+    
     try:
-        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        if image.width * image.height > MAX_IMAGE_PIXELS:
-            raise ImageTooLargeError("Image dimensions too large")
-
         draw = ImageDraw.Draw(image)
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
         
@@ -96,6 +96,10 @@ def scrub_image_and_extract_text(img_bytes):
         buffered = io.BytesIO()
         image.save(buffered, format="JPEG", quality=85)
         return base64.b64encode(buffered.getvalue()).decode("utf-8"), " ".join(scrubbed_words)
+    except UnidentifiedImageError:
+        raise
+    except ImageTooLargeError:
+        raise
     except Exception as e:
         logger.error(f"PII Redaction Error: {e}")
         raise RuntimeError("PII redaction failed") from e
@@ -284,6 +288,7 @@ async def analyze(payload: dict, request: Request):
             "category": category,
             "is_ai": analysis_data.get("is_ai", False),
             "scam_probability": analysis_data.get("scam_probability", 0),
+            "dominant_language": analysis_data.get("dominant_language", "en"),
             "title": empathy_data.get("title", "Check Results"),
             "grandma_reply": empathy_data.get("grandma_reply", "Something went wrong. ❤️")
         }

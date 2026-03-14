@@ -298,6 +298,7 @@ async def analyze(payload: dict, request: Request):
                 logger.error("No JSON object found in Detective response")
                 raise ValueError("Detective response was not valid JSON")
             analysis_data = json.loads(raw_det[s1:e1])
+            print(f"DEBUG_DETECTIVE_JSON: {json.dumps(analysis_data, indent=2)}")
 
             # Call 2: Friendly Translation (Grandchild)
             resp2 = await fetch_with_retries(

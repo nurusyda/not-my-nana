@@ -62,18 +62,6 @@ This app empowers **them** to check privately — no judgment, just support.
 | ![History View](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/History_and_Clear_button.jpeg) | ![Redaction Example](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Redaction_Result.png) | ![Loading - Dark Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Loading_Dark_Mode.jpeg) |
 
 
-| Main Screen - Day Mode       | Green – Safe Result          | Red – Scam Alert             |
-|------------------------------|------------------------------|------------------------------|
-|  ![Main Screen](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Home.jpeg)  | ![Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Safe-Green.jpeg) | ![Scam Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Scam-Red.png) |
-
-| Grey – AI-generated Fake     | Purple – Talk to Family      | Yellow – Clickbait / News    |
-|------------------------------|------------------------------|------------------------------|
-| ![AI Fake](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/AI_Images-Grey.jpeg)  | ![Sensitive](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Sensitive-Purple.png) | ![Clickbait](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Viral-Yellow.png) |
-
-| History View                 | Redaction Example            | Loading - Dark Mode          |
-|------------------------------|------------------------------|------------------------------|
-| ![History](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/History_and_Clear_button.jpeg)  | ![Redaction](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Redaction_Result.png) | ![Dark Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Loading_Dark_Mode.jpeg)   |
-
 ## How It Works (Quick Tour)
 
 1. **Local redaction** (Tesseract OCR + regex) hides PII on-device.

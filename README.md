@@ -47,6 +47,21 @@ This app empowers **them** to check privately — no judgment, just support.
 
 ## Demo Screenshots
 
+## Demo Screenshots
+
+| Main Screen - Day Mode       | Green – Safe Result          | Red – Scam Alert             |
+|------------------------------|------------------------------|------------------------------|
+| ![Main Screen - Day Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Home.jpeg) | ![Green – Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Safe-Green.jpeg) | ![Red – Scam Alert](https://raw.githubusercontent.com/YOUR_ACTUAL_USERNAME/not-my-nana/main/Screenshot/Scam-Red.png) |
+
+| Grey – AI-generated Fake     | Purple – Talk to Family      | Yellow – Clickbait / News    |
+|------------------------------|------------------------------|------------------------------|
+| ![Grey – AI-generated Fake](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/AI_Images-Grey.jpeg) | ![Purple – Talk to Family](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Sensitive-Purple.png) | ![Yellow – Clickbait / News](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Viral-Yellow.png) |
+
+| History View                 | Redaction Example (optional) | Loading - Dark Mode          |
+|------------------------------|------------------------------|------------------------------|
+| ![History View](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/History_and_Clear_button.jpeg) | ![Redaction Example](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Redaction_Result.png) | ![Loading - Dark Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Loading_Dark_Mode.jpeg) |
+
+
 | Main Screen - Day Mode       | Green – Safe Result          | Red – Scam Alert             |
 |------------------------------|------------------------------|------------------------------|
 |  ![Main Screen](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Home.jpeg)  | ![Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Safe-Green.jpeg) | ![Scam Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/blob/main/Screenshot/Scam-Red.png) |

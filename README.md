@@ -47,19 +47,17 @@ This app empowers **them** to check privately — no judgment, just support.
 
 ## Demo Screenshots
 
-## Demo Screenshots
-
-| Main Screen - Day Mode       | Green – Safe Result          | Red – Scam Alert             |
+| Main Screen - Dark Mode      | Green – Safe Result          | Red – Scam Alert             |
 |------------------------------|------------------------------|------------------------------|
-| ![Main Screen - Day Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Home.jpeg) | ![Green – Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Safe-Green.jpeg) | ![Red – Scam Alert](https://raw.githubusercontent.com/YOUR_ACTUAL_USERNAME/not-my-nana/main/Screenshot/Scam-Red.png) |
+| ![Main Screen - Day Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Home_Dark_Mode.png) | ![Green – Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Green_Safe.png) | ![Red – Scam Alert](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Red_Scam.png) |
 
-| Grey – AI-generated Fake     | Purple – Talk to Family      | Yellow – Clickbait / News    |
+| Grey – AI-generated          | Purple – Talk to Family      | Yellow – Clickbait / News    |
 |------------------------------|------------------------------|------------------------------|
-| ![Grey – AI-generated Fake](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/AI_Images-Grey.jpeg) | ![Purple – Talk to Family](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Sensitive-Purple.png) | ![Yellow – Clickbait / News](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Viral-Yellow.png) |
+| ![Grey – AI-generated Fake](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Grey_AI_Images.png) | ![Purple – Talk to Family](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Purple_Sensitive.png) | ![Yellow – Clickbait / News](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Yellow_Viral.png) |
 
-| History View                 | Redaction Example (optional) | Loading - Dark Mode          |
+| History View                 | Redaction Example            | Loading - Day Mode           |
 |------------------------------|------------------------------|------------------------------|
-| ![History View](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/History_and_Clear_button.jpeg) | ![Redaction Example](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Redaction_Result.png) | ![Loading - Dark Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshot/Loading_Dark_Mode.jpeg) |
+| ![History View](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/History.png) | ![Redaction Example](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Redaction_Result.png) | ![Loading - Dark Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Loading_Day_Mode.png) |
 
 
 ## How It Works (Quick Tour)

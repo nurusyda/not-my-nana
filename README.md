@@ -49,11 +49,11 @@ This app empowers **them** to check privately — no judgment, just support.
 
 | Main Screen - Dark Mode      | Green – Safe Result          | Red – Scam Alert             |
 |------------------------------|------------------------------|------------------------------|
-| ![Main Screen - Day Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Home_Dark_Mode.png) | ![Green – Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Green_Safe.png) | ![Red – Scam Alert](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Red_Scam.png) |
+| ![Main Screen - Day Mode](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Homepage_Dark_Mode.png) | ![Green – Safe Result](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Green_Safe.png) | ![Red – Scam Alert](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Red_Scam.png) |
 
 | Grey – AI-generated          | Purple – Talk to Family      | Yellow – Clickbait / News    |
 |------------------------------|------------------------------|------------------------------|
-| ![Grey – AI-generated Fake](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Grey_AI_Images.png) | ![Purple – Talk to Family](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Purple_Sensitive.png) | ![Yellow – Clickbait / News](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Yellow_Viral.png) |
+| ![Grey – AI-generated Fake](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Grey_AI_Image.png) | ![Purple – Talk to Family](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Purple_Sensitive.png) | ![Yellow – Clickbait / News](https://raw.githubusercontent.com/nurusyda/not-my-nana/main/Screenshots/Yellow_Viral.png) |
 
 | History View                 | Redaction Example            | Loading - Day Mode           |
 |------------------------------|------------------------------|------------------------------|

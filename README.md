@@ -85,6 +85,19 @@ Huge thanks to Amazon Bedrock & Nova 2 Lite for making powerful multimodal reaso
 - **PWA**: Manifest + service worker basics
 - **Dependencies**: httpx, cachetools, python-dotenv, etc. (see requirements.txt)
 
+## Contributing
+
+We welcome contributions to make **Not My Nana** even better and help more grandparents stay safe!
+
+Feel free to:
+- Report bugs or suggest improvements by [opening an issue](https://github.com/nurusyda/not-my-nana/issues)
+- Submit pull requests with code changes, new features, better prompts, translations, or UI tweaks
+- Share feedback on how the app works in real life (e.g., scam examples that were missed)
+
+For bigger changes, please open an issue first to discuss.
+
+Thank you for helping protect our loved ones ❤️
+
 ## Installation & Setup
 
 ### 1. Clone the repo
@@ -92,3 +105,4 @@ Huge thanks to Amazon Bedrock & Nova 2 Lite for making powerful multimodal reaso
 ```bash
 git clone https://github.com/nurusyda/not-my-nana.git
 cd not-my-nana
+
